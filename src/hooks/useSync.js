@@ -4,7 +4,7 @@ import { db } from '../lib/firebase';
 import { getAllLogs, deleteLogsUntil } from '../lib/idb';
 import { generateBuffer } from '../lib/geoUtils';
 
-const SYNC_INTERVAL = 10 * 60 * 1000; // 10 minutes
+const SYNC_INTERVAL = 30 * 1000; // 30 seconds for testing
 
 export const useSync = (isTracking, userId, userName, trackId) => {
   const syncTimerRef = useRef(null);
