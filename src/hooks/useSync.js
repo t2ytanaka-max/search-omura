@@ -52,6 +52,17 @@ export const useSync = (isTracking, userId, userName, trackId) => {
 
   useEffect(() => {
     if (isTracking) {
+      // 捜索開始時に即座にステータスをオンラインにする
+      const updateStatus = async () => {
+        if (!userId) return;
+        await setDoc(doc(db, 'users', userId), {
+          name: userName,
+          lastSync: serverTimestamp(),
+          isTracking: true
+        }, { merge: true });
+      };
+      updateStatus();
+
       // Start periodic sync
       syncTimerRef.current = setInterval(() => {
         syncData();
@@ -61,6 +72,17 @@ export const useSync = (isTracking, userId, userName, trackId) => {
       if (syncTimerRef.current) {
         clearInterval(syncTimerRef.current);
         syncTimerRef.current = null;
+        
+        // 捜索終了ステータスを送信
+        const stopStatus = async () => {
+          if (!userId) return;
+          await updateDoc(doc(db, 'users', userId), {
+            isTracking: false,
+            lastSync: serverTimestamp()
+          }).catch(() => {});
+        };
+        stopStatus();
+        
         syncData(true);
       }
     }
