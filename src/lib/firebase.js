@@ -10,6 +10,7 @@ const firebaseConfig = {
   storageBucket: "search-omura-fire-corps.firebasestorage.app",
   messagingSenderId: "94083214990",
   appId: "1:94083214990:web:5c11174b047392724c23df",
+  measurementId: "G-YJ68FZ38L0"
 };
 
 const app = initializeApp(firebaseConfig);
