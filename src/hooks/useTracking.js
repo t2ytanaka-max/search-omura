@@ -27,8 +27,8 @@ export const useTracking = (isTracking, trackId) => {
         },
         {
           enableHighAccuracy: true,
-          maximumAge: 1000,
-          timeout: 5000
+          maximumAge: 10000, // 10秒前のデータまで許容
+          timeout: 15000 // タイムアウトを15秒に延長
         }
       );
     } else {
