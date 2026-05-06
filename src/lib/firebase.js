@@ -2,7 +2,6 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
-// Firebase Configuration (Replace with your own)
 const firebaseConfig = {
   apiKey: "AIzaSyDdOW3-INeDWRm0XKDGtn7pji_fXV2wQS0",
   authDomain: "search-omura-fire-corps.firebaseapp.com",
@@ -14,6 +13,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-console.log("Firebase initialized for project:", firebaseConfig.projectId);
+console.log("APP_START: Firebase Initialized");
+
 export const db = getFirestore(app);
 export const auth = getAuth(app);
