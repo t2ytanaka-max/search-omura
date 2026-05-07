@@ -50,7 +50,7 @@ export default function MemberView() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-xl font-black italic tracking-tighter">SEARCH 大村市消防団</h1>
-            <p className="text-[10px] opacity-80 font-bold uppercase tracking-widest">Missing Person Search Support</p>
+            <p className="text-[10px] opacity-80 font-bold uppercase tracking-widest">v1.0.1 - Connected</p>
           </div>
           <div className={`px-3 py-1 rounded-full text-[10px] font-black flex items-center gap-1.5 ${isTracking ? 'bg-red-500 animate-pulse' : 'bg-primary-800'}`}>
             <Radio size={12} /> {isTracking ? '捜索中' : '待機中'}
