@@ -81,6 +81,9 @@ export const useSyncQueue = (userId, onNewInstruction) => {
   }, []);
 
   // 3. 本部からのメッセージ指示をリアルタイム監視 (オンライン時のみ)
+  const isFirstLoadRef = useRef(true);
+  const appStartTimeRef = useRef(Date.now());
+
   useEffect(() => {
     if (!userId) return;
 
@@ -92,34 +95,47 @@ export const useSyncQueue = (userId, onNewInstruction) => {
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       let hasNew = false;
+      let shouldAlert = false;
       const localMsgs = await getMessages();
       const localIds = new Set(localMsgs.map(m => m.id));
 
-      for (const change of snapshot.docChanges()) {
+      const docChanges = snapshot.docChanges();
+      
+      for (const change of docChanges) {
         if (change.type === 'added') {
           const data = change.doc.data();
           const docId = change.doc.id;
+          const msgTimestamp = data.timestamp?.toMillis() || Date.now();
 
           // 特定のメンバー宛て、または全体（all）宛て
           if (data.target === 'all' || data.target === userId) {
             if (!localIds.has(docId)) {
-              // 新着メッセージをローカルDBに保存
+              // 初回ロード時、またはアプリ起動時間より古い過去の指示は「既読」としてローカルに保存し、アラームは鳴らさない
+              const isPastMessage = isFirstLoadRef.current || msgTimestamp < appStartTimeRef.current;
+              
               const newMsg = {
                 id: docId,
                 text: data.text,
-                timestamp: data.timestamp?.toMillis() || Date.now(),
-                read: false
+                timestamp: msgTimestamp,
+                read: isPastMessage ? true : false // 過去のものは既読にする
               };
               await addMessage(newMsg);
               hasNew = true;
+
+              if (!isPastMessage) {
+                shouldAlert = true; // 本当の新着メッセージのみアラームをトリガー
+              }
             }
           }
         }
       }
 
+      // 初回スナップショット処理が終わったらロード完了とする
+      isFirstLoadRef.current = false;
+
       if (hasNew) {
         loadLocalMessages();
-        if (onNewInstruction) {
+        if (shouldAlert && onNewInstruction) {
           onNewInstruction();
         }
       }
