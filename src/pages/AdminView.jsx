@@ -125,31 +125,46 @@ export default function AdminView() {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div className="flex justify-between items-center px-2">
             <h2 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
-              <Users size={12} /> 稼働中の隊員 ({Object.keys(membersInfo).length}名)
+              <Users size={12} /> 稼働中の隊員
             </h2>
+            <span className="bg-rescue-500/20 text-rescue-500 text-[10px] font-black px-2 py-0.5 rounded-full border border-rescue-500/30">
+              {Object.values(membersInfo).filter(m => m.statusCode !== 'ST06' && (Date.now() - m.lastSync) <= 30 * 60 * 1000).length}名
+            </span>
           </div>
 
           <div className="space-y-2">
-            {Object.keys(membersInfo).length === 0 ? (
-              <p className="text-center py-8 text-gray-600 text-xs font-bold">まだ通信がありません</p>
+            {Object.values(membersInfo).filter(member => {
+              // 1. 「下山開始 (ST06)」を押した隊員は除外
+              if (member.statusCode === 'ST06') return false;
+              // 2. 最終同期から30分以上経過している隊員も非アクティブとして除外
+              const isTimeout = (Date.now() - member.lastSync) > 30 * 60 * 1000;
+              if (isTimeout) return false;
+              return true;
+            }).length === 0 ? (
+              <p className="text-center py-8 text-gray-600 text-xs font-bold">稼働中の隊員はいません</p>
             ) : (
-              Object.values(membersInfo).map(member => {
-                const status = STATUS_MAP[member.statusCode] || { text: '不明', color: 'text-gray-400 bg-gray-500/10' };
-                return (
-                  <div key={member.userId} className="bg-gray-950/50 border border-gray-800 p-3 rounded-xl space-y-2">
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm font-black text-gray-200">{member.userName} ({member.userId})</p>
-                      <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${status.color}`}>
-                        {status.text}
-                      </span>
+              Object.values(membersInfo)
+                .filter(member => {
+                  if (member.statusCode === 'ST06') return false;
+                  return (Date.now() - member.lastSync) <= 30 * 60 * 1000;
+                })
+                .map(member => {
+                  const status = STATUS_MAP[member.statusCode] || { text: '不明', color: 'text-gray-400 bg-gray-500/10' };
+                  return (
+                    <div key={member.userId} className="bg-gray-950/50 border border-gray-800 p-3 rounded-xl space-y-2">
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm font-black text-gray-200">{member.userName} ({member.userId})</p>
+                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${status.color}`}>
+                          {status.text}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] text-gray-500 font-mono">
+                        <span>{member.lat.toFixed(5)}, {member.lng.toFixed(5)}</span>
+                        <span>{new Date(member.lastSync).toLocaleTimeString()}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center text-[10px] text-gray-500 font-mono">
-                      <span>{member.lat.toFixed(5)}, {member.lng.toFixed(5)}</span>
-                      <span>{new Date(member.lastSync).toLocaleTimeString()}</span>
-                    </div>
-                  </div>
-                );
-              })
+                  );
+                })
             )}
           </div>
         </div>
