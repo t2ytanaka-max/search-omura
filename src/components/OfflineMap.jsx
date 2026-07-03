@@ -74,6 +74,55 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
   useEffect(() => {
     if (map.current) return;
 
+    // カスタムプロトコルの登録 (IndexedDBから非同期でタイルを読み込む)
+    const protocolName = 'offline-osm';
+    
+    // 多重登録を防ぐため、既に登録されているか確認
+    try {
+      maplibregl.addProtocol(protocolName, (params, callback) => {
+        const tileMatch = params.url.match(/offline-osm:\/\/(\d+)-(\d+)-(\d+)/);
+        if (tileMatch) {
+          const tileId = `${tileMatch[1]}-${tileMatch[2]}-${tileMatch[3]}`;
+          
+          getCachedTile(tileId).then(cached => {
+            if (cached) {
+              cached.blob.arrayBuffer().then(buf => {
+                callback(null, buf, null, null);
+              });
+            } else {
+              // キャッシュがない場合、オンラインならインターネットから取得
+              if (navigator.onLine) {
+                const osmUrl = `https://a.tile.openstreetmap.org/${tileMatch[1]}/${tileMatch[2]}/${tileMatch[3]}.png`;
+                fetch(osmUrl)
+                  .then(res => {
+                    if (!res.ok) throw new Error("Fetch failed");
+                    return res.blob();
+                  })
+                  .then(blob => {
+                    // バックグラウンドでキャッシュ
+                    cacheTile(tileId, blob);
+                    return blob.arrayBuffer();
+                  })
+                  .then(buf => {
+                    callback(null, buf, null, null);
+                  })
+                  .catch(err => {
+                    callback(err);
+                  });
+              } else {
+                callback(new Error('Offline and no cache'));
+              }
+            }
+          }).catch(err => {
+            callback(err);
+          });
+        }
+        return { cancel: () => {} };
+      });
+    } catch (e) {
+      // 既にプロトコルが登録されている場合はエラーを無視
+    }
+
     // 初期表示は大村市中心
     const initialCenter = currentPosition ? [currentPosition.lng, currentPosition.lat] : [129.96, 32.90];
 
@@ -85,7 +134,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
           'osm': {
             type: 'raster',
             tiles: [
-              'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'
+              'offline-osm://{z}-{x}-{y}'
             ],
             tileSize: 256,
             attribution: '&copy; OpenStreetMap contributors'
@@ -102,8 +151,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
         ]
       },
       center: initialCenter,
-      zoom: 12,
-      transformRequest: transformRequest
+      zoom: 12
     });
 
     map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
