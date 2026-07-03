@@ -20,6 +20,7 @@ export default function AdminView() {
   const [instructionText, setInstructionText] = useState('');
   const [targetMember, setTargetMember] = useState('all'); // 'all' or userId
   const [statusMessage, setStatusMessage] = useState('');
+  const [activeTab, setActiveTab] = useState('map'); // 'map', 'control', 'logs' (mobile responsive tabs)
 
   // 1. Firebaseのログ受信監視 (リアルタイムデコード)
   useEffect(() => {
@@ -104,12 +105,37 @@ export default function AdminView() {
   };
 
   return (
-    <div className="flex h-full bg-gray-950 text-white overflow-hidden">
+    <div className="flex flex-col md:flex-row h-[100dvh] w-full bg-gray-950 text-white overflow-hidden">
       
+      {/* モバイル用タブヘッダー (PCでは非表示) */}
+      <div className="md:hidden flex bg-gray-900 border-b border-gray-800 z-30">
+        <button
+          type="button"
+          onClick={() => setActiveTab('map')}
+          className={`flex-1 py-4 text-xs font-black tracking-wider transition-all border-b-2 ${activeTab === 'map' ? 'text-rescue-500 border-rescue-500 bg-gray-950' : 'text-gray-400 border-transparent'}`}
+        >
+          地図モニター
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('control')}
+          className={`flex-1 py-4 text-xs font-black tracking-wider transition-all border-b-2 ${activeTab === 'control' ? 'text-rescue-500 border-rescue-500 bg-gray-950' : 'text-gray-400 border-transparent'}`}
+        >
+          隊員・指示 ({Object.values(membersInfo).filter(m => m.statusCode !== 'ST06' && (Date.now() - m.lastSync) <= 30 * 60 * 1000).length}名)
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('logs')}
+          className={`flex-1 py-4 text-xs font-black tracking-wider transition-all border-b-2 ${activeTab === 'logs' ? 'text-rescue-500 border-rescue-500 bg-gray-950' : 'text-gray-400 border-transparent'}`}
+        >
+          生ログ履歴
+        </button>
+      </div>
+
       {/* サイドバー（ステータス＆コントロール） */}
-      <aside className="w-80 bg-gray-900 border-r border-gray-800 flex flex-col z-20 shadow-2xl">
+      <aside className={`${activeTab === 'control' ? 'flex' : 'hidden'} md:flex md:w-80 w-full bg-gray-900 border-r border-gray-800 flex-col z-20 shadow-2xl h-full overflow-hidden`}>
         {/* ヘッダー */}
-        <div className="p-6 border-b border-gray-800">
+        <div className="hidden md:block p-6 border-b border-gray-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-rescue-500 rounded-xl flex items-center justify-center shadow-lg shadow-rescue-500/20">
               <LayoutDashboard size={20} className="text-white" />
@@ -214,35 +240,34 @@ export default function AdminView() {
 
       </aside>
 
-      {/* 地図エリア */}
-      <main className="flex-1 relative bg-gray-950">
+      {/* 地図エリア：モバイルでは地図タブ選択時のみ表示 */}
+      <main className={`${activeTab === 'map' ? 'block' : 'hidden'} md:block flex-1 relative bg-gray-950 h-full`}>
         <OfflineMap memberTracks={memberTracks} />
-
-        {/* 最近の受信ログ一覧（右側オーバーレイ） */}
-        <div className="absolute top-6 right-6 w-80 bg-gray-900/90 border border-gray-800 rounded-2xl p-4 shadow-2xl z-10 max-h-[320px] overflow-hidden flex flex-col">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
-              <Radio size={12} className="text-red-500 animate-pulse" /> 受信CSV生ログ履歴
-            </h2>
-            <RefreshCw size={12} className="text-gray-500 hover:text-white cursor-pointer" />
-          </div>
-          <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
-            {logs.slice(0, 30).map((log) => (
-              <div key={log.id} className="p-2 bg-black/40 rounded-lg border border-gray-800/50 font-mono text-[9px] text-gray-300">
-                <div className="flex justify-between text-[8px] text-gray-500 mb-0.5">
-                  <span>{log.userName} ({log.userId})</span>
-                  <span>{new Date(log.timestamp).toLocaleTimeString()}</span>
-                </div>
-                <div>{`${log.userId},${log.userName},${log.statusCode},${log.lat.toFixed(5)},${log.lng.toFixed(5)}`}</div>
-              </div>
-            ))}
-            {logs.length === 0 && (
-              <p className="text-center text-gray-600 py-12 text-[10px]">受信データなし</p>
-            )}
-          </div>
-        </div>
-
       </main>
+
+      {/* 受信ログオーバーレイ：モバイルではログタブ選択時にスクロール表示、PCでは右上に絶対配置 */}
+      <div className={`${activeTab === 'logs' ? 'flex' : 'hidden'} md:flex md:absolute md:top-6 md:right-6 md:w-80 w-full bg-gray-900/95 md:bg-gray-900/90 border border-gray-800 rounded-2xl p-4 shadow-2xl z-10 max-h-[320px] md:max-h-[320px] h-full md:h-auto overflow-hidden flex-col`}>
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
+            <Radio size={12} className="text-red-500 animate-pulse" /> 受信CSV生ログ履歴
+          </h2>
+          <RefreshCw size={12} className="text-gray-500 hover:text-white cursor-pointer" />
+        </div>
+        <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
+          {logs.slice(0, 30).map((log) => (
+            <div key={log.id} className="p-2 bg-black/40 rounded-lg border border-gray-800/50 font-mono text-[9px] text-gray-300">
+              <div className="flex justify-between text-[8px] text-gray-500 mb-0.5">
+                <span>{log.userName} ({log.userId})</span>
+                <span>{new Date(log.timestamp).toLocaleTimeString()}</span>
+              </div>
+              <div>{`${log.userId},${log.userName},${log.statusCode},${log.lat.toFixed(5)},${log.lng.toFixed(5)}`}</div>
+            </div>
+          ))}
+          {logs.length === 0 && (
+            <p className="text-center text-gray-600 py-12 text-[10px]">受信データなし</p>
+          )}
+        </div>
+      </div>
 
     </div>
   );
