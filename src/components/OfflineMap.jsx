@@ -156,6 +156,14 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
 
     map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
 
+    // 読み込み完了時、および少し遅れて強制リサイズを実行 (サイズ0バグ対策)
+    map.current.on('load', () => {
+      map.current.resize();
+    });
+    setTimeout(() => {
+      if (map.current) map.current.resize();
+    }, 300);
+
     // 自分の現在地マーカー作成
     const el = document.createElement('div');
     el.className = 'w-6 h-6 bg-blue-500 border-4 border-white rounded-full shadow-lg animate-pulse';
@@ -324,9 +332,9 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
   };
 
   return (
-    <div className="relative w-full h-full">
+    <div className="absolute inset-0 w-full h-full">
       {/* マップコンテナ */}
-      <div ref={mapContainer} className="w-full h-full bg-slate-900" />
+      <div ref={mapContainer} className="absolute inset-0 bg-slate-900" />
 
       {/* 地図キャッシュ操作UI (オーバーレイ) */}
       <div className="absolute top-4 left-4 z-10 glass p-3 rounded-2xl max-w-[280px] space-y-2 pointer-events-auto">
