@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
-import { Download, Check, Trash2, MapPin } from 'lucide-react';
+import { Download, Trash2 } from 'lucide-react';
 import { cacheTile, getCachedTile, clearTileCache, getCachedTilesCount } from '../lib/db';
 
 // 緯度経度からタイル座標への変換
@@ -36,40 +36,6 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
     setCachedCount(count);
   };
 
-  // MapLibre のリクエストカスタムインターセプタ (オフライン時の IndexedDB 読み書き)
-  const transformRequest = (url, resourceType) => {
-    if (resourceType === 'Tile' && (url.includes('tile.openstreetmap.org') || url.includes('openstreetmap.org'))) {
-      // URLからズーム・X・Yを抽出
-      const tileMatch = url.match(/\/(\d+)\/(\d+)\/(\d+)\.png/);
-      if (tileMatch) {
-        const tileId = `${tileMatch[1]}-${tileMatch[2]}-${tileMatch[3]}`;
-        
-        return getCachedTile(tileId).then(cached => {
-          if (cached) {
-            // キャッシュがあればObjectURLを生成して返す
-            return { url: URL.createObjectURL(cached.blob) };
-          }
-          
-          // キャッシュがない場合、オンラインならフェッチして自動保存
-          if (navigator.onLine) {
-            return fetch(url)
-              .then(res => {
-                if (!res.ok) throw new Error("Fetch failed");
-                return res.blob();
-              })
-              .then(blob => {
-                cacheTile(tileId, blob);
-                return { url: URL.createObjectURL(blob) };
-              })
-              .catch(() => ({ url }));
-          }
-          return { url };
-        });
-      }
-    }
-    return { url };
-  };
-
   // 地図の初期化
   useEffect(() => {
     if (map.current) return;
@@ -77,7 +43,6 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
     // カスタムプロトコルの登録 (IndexedDBから非同期でタイルを読み込む)
     const protocolName = 'offline-osm';
     
-    // 多重登録を防ぐため、既に登録されているか確認
     try {
       maplibregl.addProtocol(protocolName, (params, callback) => {
         const tileMatch = params.url.match(/offline-osm:\/\/(\d+)-(\d+)-(\d+)/);
@@ -92,8 +57,9 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
             } else {
               // キャッシュがない場合、オンラインならインターネットから取得
               if (navigator.onLine) {
-                const osmUrl = `https://a.tile.openstreetmap.org/${tileMatch[1]}/${tileMatch[2]}/${tileMatch[3]}.png`;
-                fetch(osmUrl)
+                // 国土地理院の標準地図タイル（CORS許可・等高線入りで山岳捜索に最適）
+                const gsiUrl = `https://cyberjapandata.gsi.go.jp/xyz/std/${tileMatch[1]}/${tileMatch[2]}/${tileMatch[3]}.png`;
+                fetch(gsiUrl, { mode: 'cors' })
                   .then(res => {
                     if (!res.ok) throw new Error("Fetch failed");
                     return res.blob();
@@ -137,7 +103,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
               'offline-osm://{z}-{x}-{y}'
             ],
             tileSize: 256,
-            attribution: '&copy; OpenStreetMap contributors'
+            attribution: '地理院地図'
           }
         },
         layers: [
@@ -176,7 +142,6 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
   useEffect(() => {
     if (map.current && currentPosition && marker.current) {
       marker.current.setLngLat([currentPosition.lng, currentPosition.lat]);
-      // 地図中心を滑らかに移動
       map.current.easeTo({
         center: [currentPosition.lng, currentPosition.lat],
         duration: 1000
@@ -197,7 +162,6 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
       if (map.current.getLayer(layerId)) map.current.removeLayer(layerId);
       if (map.current.getSource(sourceId)) map.current.removeSource(sourceId);
       
-      // 他の団員用HTMLマーカー削除
       const markerElement = document.getElementById(markerId);
       if (markerElement) markerElement.remove();
     });
@@ -209,7 +173,6 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
       const layerId = `layer-${track.userId}`;
       const markerId = `marker-${track.userId}`;
 
-      // 軌跡 (LINE)
       map.current.addSource(sourceId, {
         type: 'geojson',
         data: {
@@ -236,7 +199,6 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
         }
       });
 
-      // 最新位置マーカー
       const lastPoint = track.points[track.points.length - 1];
       const el = document.createElement('div');
       el.id = markerId;
@@ -255,13 +217,13 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
     if (downloading) return;
     setDownloading(true);
 
-    const zooms = [11, 12, 13, 14]; // 捜索エリアの主要詳細度
+    const zooms = [11, 12, 13, 14];
     const tileList = [];
 
     zooms.forEach(z => {
       const xMin = lon2tile(OMURA_BOUNDS.minLon, z);
       const xMax = lon2tile(OMURA_BOUNDS.maxLon, z);
-      const yMin = lat2tile(OMURA_BOUNDS.maxLat, z); // 緯度は北に行くほどY座標が小さい
+      const yMin = lat2tile(OMURA_BOUNDS.maxLat, z);
       const yMax = lat2tile(OMURA_BOUNDS.minLat, z);
 
       for (let x = xMin; x <= xMax; x++) {
@@ -273,8 +235,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
 
     setDownloadProgress({ current: 0, total: tileList.length });
 
-    // 同時ダウンロード並行数制限付きでフェッチ
-    const limit = 4; // 同時4リクエスト
+    const limit = 4;
     let active = 0;
     let index = 0;
     let completed = 0;
@@ -285,13 +246,12 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
       active++;
 
       const tileId = `${tile.z}-${tile.x}-${tile.y}`;
-      const url = `https://a.tile.openstreetmap.org/${tile.z}/${tile.x}/${tile.y}.png`;
+      const url = `https://cyberjapandata.gsi.go.jp/xyz/std/${tile.z}/${tile.x}/${tile.y}.png`;
 
       try {
-        // すでに存在するかチェック
         const existing = await getCachedTile(tileId);
         if (!existing) {
-          const response = await fetch(url);
+          const response = await fetch(url, { mode: 'cors' });
           if (response.ok) {
             const blob = await response.blob();
             await cacheTile(tileId, blob);
@@ -303,22 +263,17 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
         completed++;
         active--;
         setDownloadProgress({ current: completed, total: tileList.length });
-        
-        // 次のダウンロードを促す
         downloadNext();
       }
     };
 
-    // 初期並行数の起動
     const promises = [];
     for (let i = 0; i < Math.min(limit, tileList.length); i++) {
       promises.push(downloadNext());
     }
     
-    // 全て終わるのを待つ
     await Promise.all(promises);
 
-    // 完了後の処理
     setDownloading(false);
     updateCacheStatus();
     alert(`ダウンロード完了！\n${completed} 枚の地図タイルをローカルに保存しました。圏外でも捜索エリアを表示可能です。`);
@@ -336,7 +291,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
       {/* マップコンテナ */}
       <div ref={mapContainer} className="absolute inset-0 bg-slate-900" />
 
-      {/* 地図キャッシュ操作UI (オーバーレイ) */}
+      {/* 地図キャッシュ操作UI */}
       <div className="absolute top-4 left-4 z-10 glass p-3 rounded-2xl max-w-[280px] space-y-2 pointer-events-auto">
         <div className="flex justify-between items-center text-xs font-bold text-gray-200">
           <span>オフライン地図: {cachedCount}枚</span>
@@ -360,13 +315,12 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
               onClick={downloadOmuraMap}
               className="flex-1 py-2 px-3 bg-rescue-500 hover:bg-rescue-600 active:scale-95 text-white text-[11px] font-black rounded-lg flex items-center justify-center gap-1 transition-all"
             >
-              <Download size={12} /> 大村周辺を一括保存
+              大村周辺を一括保存
             </button>
             {cachedCount > 0 && (
               <button
                 onClick={handleClearCache}
                 className="p-2 bg-gray-800 hover:bg-red-950 text-gray-400 hover:text-red-400 rounded-lg active:scale-95 transition-all"
-                title="キャッシュのクリア"
               >
                 <Trash2 size={14} />
               </button>
@@ -377,7 +331,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
 
       {/* コピーライト表記 */}
       <div className="absolute bottom-2 right-2 z-10 px-2 py-0.5 bg-black/55 text-white text-[9px] font-bold rounded">
-        &copy; OpenStreetMap contributors
+        地理院地図
       </div>
     </div>
   );
