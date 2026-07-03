@@ -13,7 +13,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-console.log("APP_START: Firebase Initialized");
+console.log("APP_START: Mountain Search Firebase Initialized");
 
 export const db = getFirestore(app);
 export const auth = getAuth(app);
