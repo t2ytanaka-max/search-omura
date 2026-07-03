@@ -27,6 +27,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
   const [cachedTilesMap, setCachedTilesMap] = useState(new Map()); // メモリ上のタイルキャッシュ
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
+  const renderedUserIdsRef = useRef([]); // 前回描画したユーザーIDの記録（クリーンアップ用）
 
   // 1. 起動時に IndexedDB のタイルデータをすべてメモリ（State）にロードする
   // これにより transformRequest 内で「同期的」に ObjectURL を返せるようになり、MapLibreがクラッシュしません
@@ -133,60 +134,73 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
   useEffect(() => {
     if (!map.current || !map.current.isStyleLoaded()) return;
 
-    memberTracks.forEach(track => {
-      const sourceId = `track-${track.userId}`;
-      const layerId = `layer-${track.userId}`;
-      const markerId = `marker-${track.userId}`;
+    // 前回の描画データを一旦すべてクリーンアップする (消去漏れ防止)
+    renderedUserIdsRef.current.forEach(userId => {
+      const sourceId = `track-${userId}`;
+      const layerId = `layer-${userId}`;
+      const markerId = `marker-${userId}`;
 
-      if (map.current.getLayer(layerId)) map.current.removeLayer(layerId);
-      if (map.current.getSource(sourceId)) map.current.removeSource(sourceId);
+      try {
+        if (map.current.getLayer(layerId)) map.current.removeLayer(layerId);
+        if (map.current.getSource(sourceId)) map.current.removeSource(sourceId);
+      } catch (e) {
+        console.warn("Cleanup layers error:", e);
+      }
       
       const markerElement = document.getElementById(markerId);
       if (markerElement) markerElement.remove();
     });
 
+    // 新規描画
     memberTracks.forEach(track => {
       if (!track.points || track.points.length === 0) return;
       const sourceId = `track-${track.userId}`;
       const layerId = `layer-${track.userId}`;
       const markerId = `marker-${track.userId}`;
 
-      map.current.addSource(sourceId, {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          geometry: {
-            type: 'LineString',
-            coordinates: track.points.map(p => [p.lng, p.lat])
+      try {
+        map.current.addSource(sourceId, {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            geometry: {
+              type: 'LineString',
+              coordinates: track.points.map(p => [p.lng, p.lat])
+            }
           }
-        }
-      });
+        });
 
-      map.current.addLayer({
-        id: layerId,
-        type: 'line',
-        source: sourceId,
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round'
-        },
-        paint: {
-          'line-color': '#ff3b3b',
-          'line-width': 6,
-          'line-opacity': 0.8
-        }
-      });
+        map.current.addLayer({
+          id: layerId,
+          type: 'line',
+          source: sourceId,
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round'
+          },
+          paint: {
+            'line-color': '#ff3b3b',
+            'line-width': 6,
+            'line-opacity': 0.8
+          }
+        });
 
-      const lastPoint = track.points[track.points.length - 1];
-      const el = document.createElement('div');
-      el.id = markerId;
-      el.className = 'px-3 py-1 bg-red-600 text-white text-[10px] font-black rounded-full border-2 border-white shadow-md transform -translate-y-4';
-      el.innerText = track.userName || '団員';
+        const lastPoint = track.points[track.points.length - 1];
+        const el = document.createElement('div');
+        el.id = markerId;
+        el.className = 'px-3 py-1 bg-red-600 text-white text-[10px] font-black rounded-full border-2 border-white shadow-md transform -translate-y-4';
+        el.innerText = track.userName || '団員';
 
-      new maplibregl.Marker({ element: el })
-        .setLngLat([lastPoint.lng, lastPoint.lat])
-        .addTo(map.current);
+        new maplibregl.Marker({ element: el })
+          .setLngLat([lastPoint.lng, lastPoint.lat])
+          .addTo(map.current);
+      } catch (e) {
+        console.error("Failed to render member track:", track.userId, e);
+      }
     });
+
+    // 今回描画したIDリストを保存して次回の消去に使用する
+    renderedUserIdsRef.current = memberTracks.map(t => t.userId);
 
   }, [memberTracks]);
 

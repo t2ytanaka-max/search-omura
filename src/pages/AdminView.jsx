@@ -76,7 +76,18 @@ export default function AdminView() {
       });
 
       setLogs(parsedLogs.reverse()); // 画面表示用は最新が上
-      setMemberTracks(Object.values(tracksMap));
+      
+      // 軌跡および赤い名前ラベルも、現在アクティブな隊員（下山開始「ST06」や30分以上通信途絶していない人）のみに絞り込む
+      const activeTracks = Object.values(tracksMap).filter(track => {
+        const info = latestMembers[track.userId];
+        if (!info) return false;
+        if (info.statusCode === 'ST06') return false;
+        const isTimeout = (Date.now() - info.lastSync) > 30 * 60 * 1000;
+        if (isTimeout) return false;
+        return true;
+      });
+
+      setMemberTracks(activeTracks);
       setMembersInfo(latestMembers);
     });
 
