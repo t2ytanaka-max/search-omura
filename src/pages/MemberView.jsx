@@ -127,7 +127,7 @@ export default function MemberView() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-950 text-white">
+    <div className="flex flex-col h-[100dvh] w-full bg-gray-950 text-white overflow-hidden">
       {/* 警告モーダル */}
       <NotificationManager 
         activeAlert={activeAlert} 

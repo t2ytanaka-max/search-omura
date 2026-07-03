@@ -13,8 +13,8 @@
 html, body, #root {
   margin: 0;
   padding: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100dvw;
+  height: 100dvh;
   overflow: hidden;
   background-color: #111827; /* Dark base theme for low battery usage and dark environments */
 }
