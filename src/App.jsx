@@ -38,12 +38,16 @@ export default function App() {
       <div className="flex flex-col items-center justify-center h-[100dvh] w-full bg-gray-950 text-white p-6 overflow-hidden select-none">
         
         {/* アプリロゴ */}
-        <div className="text-center space-y-3 mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-rescue-500 rounded-3xl shadow-xl shadow-rescue-500/30 animate-pulse">
-            <Compass size={48} className="text-white" />
+        <div className="text-center space-y-4 mb-10 px-4">
+          <div className="inline-flex items-center justify-center w-24 h-24 bg-rescue-500 rounded-3xl shadow-xl shadow-rescue-500/30 animate-pulse">
+            <Compass size={52} className="text-white" />
           </div>
-          <h1 className="text-3xl font-black tracking-tighter text-white">山岳捜索サポーター</h1>
-          <p className="text-xs font-black text-rescue-500 font-mono tracking-widest uppercase">Search 大村市消防団</p>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-tight uppercase">
+            SEARCH <br className="sm:hidden" />大村市消防団
+          </h1>
+          <p className="text-lg font-black text-rescue-500 tracking-widest uppercase">
+            山岳捜索サポーター
+          </p>
         </div>
 
         {/* 選択ボタンパネル */}
