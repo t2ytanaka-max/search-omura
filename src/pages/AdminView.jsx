@@ -188,16 +188,27 @@ export default function AdminView() {
                 .map(member => {
                   const status = STATUS_MAP[member.statusCode] || { text: '不明', color: 'text-gray-400 bg-gray-500/10' };
                   return (
-                    <div key={member.userId} className="bg-gray-950/50 border border-gray-800 p-3 rounded-xl space-y-2">
-                      <div className="flex justify-between items-center">
-                        <p className="text-sm font-black text-gray-200">{member.userName} ({member.userId})</p>
-                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${status.color}`}>
+                    <div key={member.userId} className="bg-gray-950/70 border border-gray-800 p-4 rounded-xl space-y-3 shadow-lg">
+                      <div className="flex justify-between items-center border-b border-gray-800 pb-2">
+                        <p className="text-base font-black text-white">{member.userName}</p>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${status.color}`}>
                           {status.text}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center text-[10px] text-gray-500 font-mono">
-                        <span>{member.lat.toFixed(5)}, {member.lng.toFixed(5)}</span>
-                        <span>{new Date(member.lastSync).toLocaleTimeString()}</span>
+                      
+                      {/* 高視認性の位置情報＆時間データ */}
+                      <div className="space-y-1.5 font-mono text-xs">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400 font-bold">緯度経度:</span>
+                          <span className="text-yellow-400 font-black tracking-wider text-sm">{member.lat.toFixed(5)}, {member.lng.toFixed(5)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400 font-bold">受信時刻:</span>
+                          <span className="text-white font-black text-sm">{new Date(member.lastSync).toLocaleTimeString()}</span>
+                        </div>
+                        <div className="text-[10px] text-gray-500 text-right font-bold mt-1">
+                          ID: {member.userId}
+                        </div>
                       </div>
                     </div>
                   );
