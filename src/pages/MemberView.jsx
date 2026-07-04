@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, MapPin, Send, Mail, CheckCircle, AlertTriangle, Moon, RefreshCw, Smartphone } from 'lucide-react';
+import { Play, MapPin, Send, Mail, CheckCircle, AlertTriangle, Moon, RefreshCw, Smartphone, LogOut } from 'lucide-react';
 import OfflineMap from '../components/OfflineMap';
 import NotificationManager from '../components/NotificationManager';
 import { useSyncQueue } from '../hooks/useSyncQueue';
@@ -14,7 +14,7 @@ const REPORT_TEMPLATES = [
   { code: 'ST06', text: '下山開始', color: 'bg-gray-600 active:bg-gray-700' }
 ];
 
-export default function MemberView() {
+export default function MemberView({ onGoBack }) {
   const [activeTab, setActiveTab] = useState('report'); // report, map, messages, queue
   const [userName, setUserName] = useState(() => localStorage.getItem('search_member_name') || '');
   const [userId] = useState(() => {
@@ -167,9 +167,21 @@ export default function MemberView() {
       {/* ヘッダー情報 */}
       <header className="p-4 bg-gray-900 border-b border-gray-800 z-10">
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-lg font-black tracking-tighter text-rescue-500">山岳捜索サポーター</h1>
-            <p className="text-[9px] text-gray-400 font-mono tracking-widest uppercase">Search Omura Corps</p>
+          <div className="flex items-center gap-2.5">
+            {onGoBack && (
+              <button
+                type="button"
+                onClick={onGoBack}
+                className="p-2 bg-gray-800 hover:bg-gray-700 active:scale-95 rounded-xl transition-all text-gray-400 hover:text-white"
+                title="選択画面に戻る"
+              >
+                <LogOut size={16} className="rotate-180 text-rescue-500" />
+              </button>
+            )}
+            <div>
+              <h1 className="text-lg font-black tracking-tighter text-rescue-500">山岳捜索サポーター</h1>
+              <p className="text-[9px] text-gray-400 font-mono tracking-widest uppercase">Search Omura Corps</p>
+            </div>
           </div>
           
           <div className="flex items-center gap-3">

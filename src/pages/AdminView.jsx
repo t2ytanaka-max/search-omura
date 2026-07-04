@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Send, LayoutDashboard, MessageSquare, RefreshCw, Radio } from 'lucide-react';
+import { Users, Send, LayoutDashboard, MessageSquare, RefreshCw, Radio, LogOut } from 'lucide-react';
 import OfflineMap from '../components/OfflineMap';
 import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -13,7 +13,7 @@ const STATUS_MAP = {
   'ST06': { text: '下山開始', color: 'text-white bg-gray-600 border border-gray-500' }
 };
 
-export default function AdminView() {
+export default function AdminView({ onGoBack }) {
   const [logs, setLogs] = useState([]);
   const [memberTracks, setMemberTracks] = useState([]);
   const [membersInfo, setMembersInfo] = useState({});
@@ -119,7 +119,17 @@ export default function AdminView() {
     <div className="flex flex-col md:flex-row h-[100dvh] w-full bg-gray-950 text-white overflow-hidden">
       
       {/* モバイル用タブヘッダー (PCでは非表示) */}
-      <div className="md:hidden flex bg-gray-900 border-b border-gray-800 z-30">
+      <div className="md:hidden flex items-center bg-gray-900 border-b border-gray-800 z-30 px-2 w-full">
+        {onGoBack && (
+          <button
+            type="button"
+            onClick={onGoBack}
+            className="p-3 bg-gray-800 hover:bg-gray-700 active:scale-95 rounded-xl text-gray-400 mr-1"
+            title="選択画面に戻る"
+          >
+            <LogOut size={16} className="rotate-180 text-rescue-500" />
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setActiveTab('map')}
@@ -147,14 +157,26 @@ export default function AdminView() {
       <aside className={`${activeTab === 'control' ? 'flex' : 'hidden'} md:flex md:w-80 w-full bg-gray-900 border-r border-gray-800 flex-col z-20 shadow-2xl h-full overflow-hidden`}>
         {/* ヘッダー */}
         <div className="hidden md:block p-6 border-b border-gray-800">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-rescue-500 rounded-xl flex items-center justify-center shadow-lg shadow-rescue-500/20">
-              <LayoutDashboard size={20} className="text-white" />
+          <div className="flex justify-between items-center w-full">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-rescue-500 rounded-xl flex items-center justify-center shadow-lg shadow-rescue-500/20">
+                <LayoutDashboard size={20} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-black tracking-tighter text-white">本部指令システム</h1>
+                <p className="text-xs text-rescue-500 font-mono tracking-widest uppercase font-bold">Search Control Center</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-black tracking-tighter text-white">本部指令システム</h1>
-              <p className="text-xs text-rescue-500 font-mono tracking-widest uppercase font-bold">Search Control Center</p>
-            </div>
+            {onGoBack && (
+              <button
+                type="button"
+                onClick={onGoBack}
+                className="p-2.5 bg-gray-800 hover:bg-gray-700 active:scale-95 rounded-xl transition-all text-gray-400 hover:text-white"
+                title="選択画面に戻る"
+              >
+                <LogOut size={16} className="rotate-180 text-rescue-500" />
+              </button>
+            )}
           </div>
         </div>
 
