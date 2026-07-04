@@ -189,9 +189,9 @@ export default function AdminView() {
                   const status = STATUS_MAP[member.statusCode] || { text: '不明', color: 'text-gray-400 bg-gray-500/10' };
                   return (
                     <div key={member.userId} className="bg-gray-950/70 border border-gray-800 p-4 rounded-xl space-y-3 shadow-lg">
-                      <div className="flex justify-between items-center border-b border-gray-800 pb-2">
-                        <p className="text-base font-black text-white">{member.userName}</p>
-                        <span className={`text-xs font-black px-3 py-1 rounded-lg shadow-sm border ${status.color}`}>
+                      <div className="flex justify-between items-center border-b-2 border-gray-800 pb-2.5">
+                        <p className="text-lg font-black text-white">{member.userName}</p>
+                        <span className={`text-sm font-black px-3.5 py-1.5 rounded-xl shadow-md border-2 ${status.color}`}>
                           {status.text}
                         </span>
                       </div>
