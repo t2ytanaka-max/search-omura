@@ -123,21 +123,21 @@ export default function AdminView() {
         <button
           type="button"
           onClick={() => setActiveTab('map')}
-          className={`flex-1 py-4 text-xs font-black tracking-wider transition-all border-b-2 ${activeTab === 'map' ? 'text-rescue-500 border-rescue-500 bg-gray-950' : 'text-gray-400 border-transparent'}`}
+          className={`flex-1 py-4 text-sm font-black tracking-wider transition-all border-b-2 ${activeTab === 'map' ? 'text-rescue-500 border-rescue-500 bg-gray-950' : 'text-gray-300 border-transparent'}`}
         >
           地図モニター
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('control')}
-          className={`flex-1 py-4 text-xs font-black tracking-wider transition-all border-b-2 ${activeTab === 'control' ? 'text-rescue-500 border-rescue-500 bg-gray-950' : 'text-gray-400 border-transparent'}`}
+          className={`flex-1 py-4 text-sm font-black tracking-wider transition-all border-b-2 ${activeTab === 'control' ? 'text-rescue-500 border-rescue-500 bg-gray-950' : 'text-gray-300 border-transparent'}`}
         >
           隊員・指示 ({Object.values(membersInfo).filter(m => m.statusCode !== 'ST06' && (Date.now() - m.lastSync) <= 30 * 60 * 1000).length}名)
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('logs')}
-          className={`flex-1 py-4 text-xs font-black tracking-wider transition-all border-b-2 ${activeTab === 'logs' ? 'text-rescue-500 border-rescue-500 bg-gray-950' : 'text-gray-400 border-transparent'}`}
+          className={`flex-1 py-4 text-sm font-black tracking-wider transition-all border-b-2 ${activeTab === 'logs' ? 'text-rescue-500 border-rescue-500 bg-gray-950' : 'text-gray-300 border-transparent'}`}
         >
           生ログ履歴
         </button>
@@ -152,8 +152,8 @@ export default function AdminView() {
               <LayoutDashboard size={20} className="text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-black tracking-tighter">本部指令システム</h1>
-              <p className="text-[9px] text-gray-500 font-mono tracking-widest uppercase">Search Control Center</p>
+              <h1 className="text-xl font-black tracking-tighter text-white">本部指令システム</h1>
+              <p className="text-xs text-rescue-500 font-mono tracking-widest uppercase font-bold">Search Control Center</p>
             </div>
           </div>
         </div>
@@ -161,10 +161,10 @@ export default function AdminView() {
         {/* 隊員一覧ステータス */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div className="flex justify-between items-center px-2">
-            <h2 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
-              <Users size={12} /> 稼働中の隊員
+            <h2 className="text-sm font-black text-gray-200 uppercase tracking-widest flex items-center gap-1.5">
+              <Users size={14} /> 稼働中の隊員
             </h2>
-            <span className="bg-rescue-500/20 text-rescue-500 text-[10px] font-black px-2 py-0.5 rounded-full border border-rescue-500/30">
+            <span className="bg-rescue-500 text-white text-xs font-black px-3 py-1 rounded-full shadow-md">
               {Object.values(membersInfo).filter(m => m.statusCode !== 'ST06' && (Date.now() - m.lastSync) <= 30 * 60 * 1000).length}名
             </span>
           </div>
@@ -219,17 +219,17 @@ export default function AdminView() {
 
         {/* 指令送信フォーム */}
         <div className="p-4 border-t border-gray-800 bg-gray-950/40">
-          <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1">
-            <MessageSquare size={12} /> 指示・警告の送信
+          <h2 className="text-sm font-black text-rescue-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+            <MessageSquare size={14} /> 指示・警告の送信
           </h2>
           
           <form onSubmit={handleSendInstruction} className="space-y-3">
             <div>
-              <label className="text-[10px] text-gray-500 font-bold block mb-1">宛先</label>
+              <label className="text-xs font-black text-gray-200 block mb-1">宛先</label>
               <select 
                 value={targetMember}
                 onChange={(e) => setTargetMember(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-rescue-500 text-white font-bold"
+                className="w-full bg-gray-900 border-2 border-gray-800 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:border-rescue-500 text-white font-black"
               >
                 <option value="all">全員 (全体指示)</option>
                 {Object.values(membersInfo).map(m => (
@@ -239,23 +239,23 @@ export default function AdminView() {
             </div>
 
             <div>
-              <label className="text-[10px] text-gray-500 font-bold block mb-1">指示内容 (テキスト)</label>
+              <label className="text-xs font-black text-gray-200 block mb-1">指示内容 (テキスト)</label>
               <textarea
                 value={instructionText}
                 onChange={(e) => setInstructionText(e.target.value)}
                 placeholder="その場で待機せよ、等"
-                className="w-full h-16 bg-gray-900 border border-gray-800 rounded-lg p-2 text-xs focus:outline-none focus:border-rescue-500 text-white font-bold resize-none"
+                className="w-full h-16 bg-gray-900 border-2 border-gray-800 rounded-lg p-2 text-sm focus:outline-none focus:border-rescue-500 text-white font-black resize-none"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-2 bg-rescue-500 hover:bg-rescue-600 active:scale-95 text-white text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5"
+              className="w-full py-3 bg-rescue-500 hover:bg-rescue-600 active:scale-95 text-white text-sm font-black rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-lg"
             >
-              <Send size={12} /> 指令を送信
+              <Send size={14} /> 指令を送信
             </button>
             {statusMessage && (
-              <p className="text-[9px] text-center font-bold text-yellow-400">{statusMessage}</p>
+              <p className="text-xs text-center font-black text-yellow-400">{statusMessage}</p>
             )}
           </form>
         </div>
@@ -268,25 +268,25 @@ export default function AdminView() {
       </main>
 
       {/* 受信ログオーバーレイ：モバイルではログタブ選択時にスクロール表示、PCでは右上に絶対配置 */}
-      <div className={`${activeTab === 'logs' ? 'flex' : 'hidden'} md:flex md:absolute md:top-6 md:right-6 md:w-80 w-full bg-gray-900/95 md:bg-gray-900/90 border border-gray-800 rounded-2xl p-4 shadow-2xl z-10 max-h-[320px] md:max-h-[320px] h-full md:h-auto overflow-hidden flex-col`}>
+      <div className={`${activeTab === 'logs' ? 'flex' : 'hidden'} md:flex md:absolute md:top-6 md:right-6 md:w-80 w-full bg-gray-900/95 md:bg-gray-900/90 border-2 border-gray-800 rounded-2xl p-4 shadow-2xl z-10 max-h-[350px] md:max-h-[350px] h-full md:h-auto overflow-hidden flex-col`}>
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
-            <Radio size={12} className="text-red-500 animate-pulse" /> 受信CSV生ログ履歴
+          <h2 className="text-sm font-black text-red-500 uppercase tracking-widest flex items-center gap-1.5">
+            <Radio size={14} className="text-red-500 animate-pulse" /> 受信CSV生ログ履歴
           </h2>
-          <RefreshCw size={12} className="text-gray-500 hover:text-white cursor-pointer" />
+          <RefreshCw size={12} className="text-gray-400 hover:text-white cursor-pointer" />
         </div>
         <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
           {logs.slice(0, 30).map((log) => (
-            <div key={log.id} className="p-2 bg-black/40 rounded-lg border border-gray-800/50 font-mono text-[9px] text-gray-300">
-              <div className="flex justify-between text-[8px] text-gray-500 mb-0.5">
+            <div key={log.id} className="p-2.5 bg-black/50 rounded-lg border border-gray-800 font-mono text-xs text-yellow-300">
+              <div className="flex justify-between text-[10px] text-gray-200 font-black mb-1 border-b border-gray-900 pb-1">
                 <span>{log.userName} ({log.userId})</span>
                 <span>{new Date(log.timestamp).toLocaleTimeString()}</span>
               </div>
-              <div>{`${log.userId},${log.userName},${log.statusCode},${log.lat.toFixed(5)},${log.lng.toFixed(5)}`}</div>
+              <div className="font-bold tracking-tight">{`${log.userId},${log.userName},${log.statusCode},${log.lat.toFixed(5)},${log.lng.toFixed(5)}`}</div>
             </div>
           ))}
           {logs.length === 0 && (
-            <p className="text-center text-gray-600 py-12 text-[10px]">受信データなし</p>
+            <p className="text-center text-gray-500 py-12 text-xs font-black">受信データなし</p>
           )}
         </div>
       </div>
