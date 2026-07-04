@@ -78,8 +78,30 @@ export default function MemberView() {
     setTimeout(() => setToastMessage(''), 3000);
   };
 
+  const unlockAudio = () => {
+    if (window.sharedAudioCtx) return;
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      // iOS自動再生制限解除のためのダミー無音再生
+      const buffer = ctx.createBuffer(1, 1, 22050);
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start(0);
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      window.sharedAudioCtx = ctx;
+      console.log("Audio context unlocked successfully.");
+    } catch (e) {
+      console.error("Failed to unlock audio context:", e);
+    }
+  };
+
   // 巨大報告ボタン押下時の処理
   const handleReport = (template) => {
+    unlockAudio(); // 音声をアンロック
     if (!userName) {
       alert("先に設定画面、または画面上部で名前を入力してください。");
       return;
@@ -127,7 +149,11 @@ export default function MemberView() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] w-full bg-gray-950 text-white overflow-hidden">
+    <div 
+      onClick={unlockAudio}
+      onTouchStart={unlockAudio}
+      className="flex flex-col h-[100dvh] w-full bg-gray-950 text-white overflow-hidden"
+    >
       {/* 警告モーダル */}
       <NotificationManager 
         activeAlert={activeAlert} 

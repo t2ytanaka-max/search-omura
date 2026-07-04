@@ -27,8 +27,17 @@ export default function NotificationManager({ activeAlert, onClear }) {
 
     // 2. Web Audio API を使ったサイレン警告音
     try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioContext();
+      let ctx = window.sharedAudioCtx;
+      if (!ctx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        ctx = new AudioContext();
+        window.sharedAudioCtx = ctx;
+      }
+      
+      // サスペンド状態ならレジュームする
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
       audioContextRef.current = ctx;
 
       const osc = ctx.createOscillator();
@@ -59,7 +68,7 @@ export default function NotificationManager({ activeAlert, onClear }) {
       }, 250);
 
     } catch (e) {
-      console.error("Web Audio API not supported", e);
+      console.error("Web Audio API not supported/unlocked", e);
     }
   };
 
@@ -80,7 +89,10 @@ export default function NotificationManager({ activeAlert, onClear }) {
       oscillatorRef.current = null;
     }
     if (audioContextRef.current) {
-      await audioContextRef.current.close();
+      // 破棄せずサスペンドに留め、次回の再利用に備える (iOS自動再生制限対策)
+      try {
+        await audioContextRef.current.suspend();
+      } catch (e) {}
       audioContextRef.current = null;
     }
 
