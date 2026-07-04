@@ -5,12 +5,12 @@ import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp } from 
 import { db } from '../lib/firebase';
 
 const STATUS_MAP = {
-  'ST01': { text: '捜索中', color: 'text-blue-400 bg-blue-500/10' },
-  'ST02': { text: '異状なし', color: 'text-emerald-400 bg-emerald-500/10' },
-  'ST03': { text: '要救助者発見', color: 'text-yellow-400 bg-yellow-500/10' },
-  'ST04': { text: '救助要請', color: 'text-red-400 bg-red-500/10 animate-pulse' },
-  'ST05': { text: '危険箇所', color: 'text-purple-400 bg-purple-500/10' },
-  'ST06': { text: '下山開始', color: 'text-gray-400 bg-gray-500/10' }
+  'ST01': { text: '捜索中', color: 'text-white bg-blue-600 border border-blue-500' },
+  'ST02': { text: '異状なし', color: 'text-white bg-emerald-600 border border-emerald-500' },
+  'ST03': { text: '要救助者発見', color: 'text-black bg-yellow-400 border border-yellow-500 font-extrabold' },
+  'ST04': { text: '救助要請', color: 'text-white bg-red-600 border border-red-500 animate-pulse font-extrabold shadow-[0_0_10px_rgba(239,68,68,0.5)]' },
+  'ST05': { text: '危険箇所', color: 'text-white bg-purple-600 border border-purple-500' },
+  'ST06': { text: '下山開始', color: 'text-white bg-gray-600 border border-gray-500' }
 };
 
 export default function AdminView() {
@@ -191,7 +191,7 @@ export default function AdminView() {
                     <div key={member.userId} className="bg-gray-950/70 border border-gray-800 p-4 rounded-xl space-y-3 shadow-lg">
                       <div className="flex justify-between items-center border-b border-gray-800 pb-2">
                         <p className="text-base font-black text-white">{member.userName}</p>
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${status.color}`}>
+                        <span className={`text-xs font-black px-3 py-1 rounded-lg shadow-sm border ${status.color}`}>
                           {status.text}
                         </span>
                       </div>
