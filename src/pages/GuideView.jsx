@@ -3,7 +3,7 @@ import { Compass, ShieldCheck, Cpu, WifiOff, FileText, ArrowLeft, Send, AlertOct
 
 export default function GuideView({ onGoBack }) {
   return (
-    <div className="min-h-screen w-full bg-gray-950 text-white font-sans overflow-y-auto">
+    <div className="h-[100dvh] w-full bg-gray-950 text-white font-sans overflow-y-auto">
       
       {/* ナビゲーションバー */}
       <header className="sticky top-0 bg-gray-900/95 backdrop-blur border-b border-gray-800 z-50 px-4 py-3">
