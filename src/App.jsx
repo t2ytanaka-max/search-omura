@@ -39,14 +39,14 @@ export default function App() {
         
         {/* アプリロゴ */}
         <div className="text-center space-y-4 mb-10 px-4">
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-rescue-500 rounded-3xl shadow-xl shadow-rescue-500/30 animate-pulse">
-            <Compass size={52} className="text-white" />
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl overflow-hidden shadow-xl shadow-rescue-500/30 animate-pulse border-2 border-gray-800">
+            <img src="/icon.png" alt="Search大村市消防団" className="w-full h-full object-cover" />
           </div>
-          <p className="text-lg font-black text-rescue-500 tracking-widest uppercase">
+          <p className="text-sm font-black text-rescue-500 tracking-widest uppercase">
             山岳捜索サポーター
           </p>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-tight uppercase">
-            SEARCH <br className="sm:hidden" />大村市消防団
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white leading-tight">
+            Search大村市消防団
           </h1>
         </div>
 
