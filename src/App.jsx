@@ -65,7 +65,7 @@ export default function App() {
           >
             <Users size={40} className="text-white" />
             <div className="text-center">
-              <span className="text-xl font-black block">活動隊員 画面</span>
+              <span className="text-xl font-black block">活動団員 画面</span>
               <span className="text-[9px] opacity-60 font-mono tracking-wider">MEMBER VIEW (GPS / REPORT)</span>
             </div>
           </button>
@@ -93,14 +93,17 @@ export default function App() {
           </button>
         </div>
 
-        <div className="absolute bottom-6 text-[10px] text-gray-600 font-black">
-          ⛰️ 消防団専用救助支援システム v1.1.0
+        <div className="absolute bottom-4 text-center max-w-sm px-4 space-y-1 text-black font-bold select-text z-10">
+          <div className="text-[10px]">Copyright&copy;2026 大村市消防団 田中哲也. All rights reserved</div>
+          <div className="text-[8px] leading-tight opacity-90">
+            本アプリおよび本マニュアルに関する一切の権利（著作権を含む）は、開発者（大村市消防団 田中哲也）に帰属します。無断での複製、転載、再配布を禁じます。
+          </div>
         </div>
       </div>
     );
   }
 
-  // 2. 隊員画面 (ポータルに戻るための setViewMode を渡す)
+  // 2. 団員画面 (ポータルに戻るための setViewMode を渡す)
   if (viewMode === 'member') {
     return <MemberView onGoBack={() => selectMode('portal')} />;
   }

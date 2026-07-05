@@ -44,7 +44,7 @@ export default function GuideView({ onGoBack }) {
             <span className="text-2xl md:text-3xl text-gray-300 font-bold">利用者ガイド＆技術解説</span>
           </h2>
           <p className="text-sm md:text-base text-gray-400 max-w-xl mx-auto leading-relaxed">
-            本アプリは、電波の極めて微弱な日本の山岳エリアにおいて、消防団員の現在地と安全状況を本部にリアルタイムで伝達するために設計された、超軽量・オフライン対応の山岳捜捜システムです。
+            本アプリは、電波の極めて微弱な日本の山岳エリアにおいて、消防団員の現在地と安全状況を本部にリアルタイムで伝達するために設計された、超軽量・オフライン対応の山岳捜索システムです。
           </p>
         </div>
       </section>
@@ -72,7 +72,7 @@ export default function GuideView({ onGoBack }) {
             </div>
             <h3 className="text-lg font-black text-white">個人情報を一切取り扱わない設計</h3>
             <p className="text-xs text-gray-400 leading-relaxed font-medium">
-              救助隊員のプライバシー保護とセキュリティの観点から、名前の登録・ログイン情報は不要です。活動時には**「任意の設定名（例：大村一郎、1小隊 等）」**と**「自動生成される匿名ランダムID」**のみで識別し、住所・電話番号などの個人情報はシステム上で一切取り扱いません。
+              救助団員のプライバシー保護とセキュリティの観点から、名前の登録・ログイン情報は不要です。活動時には**「任意の設定名（例：大村一郎、1分団 等）」**と**「自動生成される匿名ランダムID」**のみで識別し、住所・電話番号などの個人情報はシステム上で一切取り扱いません。
             </p>
           </div>
         </div>
@@ -113,7 +113,7 @@ export default function GuideView({ onGoBack }) {
               <div>
                 <h4 className="text-sm font-black text-white">強力な緊急通知システム</h4>
                 <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                  本部のパソコンやタブレットから特定の隊員、または全員に向けて「避難命令」などの指令が送られると、ブラウザの音響API（Web Audio API）から自動で大音量サイレン警告音を合成生成し、同時に画面が赤く点滅して危険を通知します。
+                  本部のパソコンやタブレットから特定の団員、または全員に向けて「避難命令」などの指令が送られると、ブラウザの音響API（Web Audio API）から自動で大音量サイレン警告音を合成生成し、同時に画面が赤く点滅して危険を通知します。
                 </p>
               </div>
             </div>
@@ -131,17 +131,17 @@ export default function GuideView({ onGoBack }) {
               <span className="text-xs font-black text-rescue-500 uppercase tracking-widest block">起動ポータル</span>
               <h4 className="text-base font-black text-white">1. 利用画面の選択</h4>
               <p className="text-xs text-gray-400 leading-relaxed">
-                アプリを立ち上げると、最初に画面選択パネルが表示されます。個々の隊員のスマートフォンで使用する場合は**「活動隊員 画面」**、本部の指令室PCや指揮車内のタブレットで使用する場合は**「本部指令 画面」**をタップして進んでください。ヘッダーの「戻る（矢印）」ボタンでいつでもこの選択画面に戻ることができます。
+                アプリを立ち上げると、最初に画面選択パネルが表示されます。個々の団員のスマートフォンで使用する場合は**「活動団員 画面」**、本部の指令室PCや指揮車内のタブレットで使用する場合は**「本部指令 画面」**をタップして進んでください。ヘッダーの「戻る（矢印）」ボタンでいつでもこの選択画面に戻ることができます。
               </p>
             </div>
 
-            {/* 2. 隊員用画面 */}
+            {/* 2. 団員用画面 */}
             <div className="bg-gray-900/30 p-6 rounded-2xl border border-gray-800/80 space-y-4">
-              <span className="text-xs font-black text-blue-400 uppercase tracking-widest block">隊員用端末</span>
-              <h4 className="text-base font-black text-white">2. 活動隊員の操作</h4>
+              <span className="text-xs font-black text-blue-400 uppercase tracking-widest block">団員用端末</span>
+              <h4 className="text-base font-black text-white">2. 活動団員の操作</h4>
               <ul className="list-decimal pl-4 text-xs text-gray-400 space-y-2.5 leading-relaxed">
                 <li>
-                  <strong className="text-white">名前の入力：</strong> 画面上部の入力欄に名前（例：小隊名や隊員名）を入力します。情報は端末に自動保存されます。
+                  <strong className="text-white">名前の入力：</strong> 画面上部の入力欄に名前（例：分団名や団員名）を入力します。情報は端末に自動保存されます。
                 </li>
                 <li>
                   <strong className="text-white">活動状況の送信：</strong> 画面中央の「捜索中」「異状なし」「救助要請」などの巨大ボタンを1つタップするだけで、その瞬間のGPS位置情報と現在のステータスがセットで即時送信（またはキューイング）されます。
@@ -158,13 +158,13 @@ export default function GuideView({ onGoBack }) {
               <h4 className="text-base font-black text-white">3. 本部での操作</h4>
               <ul className="list-decimal pl-4 text-xs text-gray-400 space-y-2.5 leading-relaxed">
                 <li>
-                  <strong className="text-white">隊員のリアルタイム追跡：</strong> 地図上にすべての稼働中隊員の「現在地（赤い名前ラベル）」と「これまでの捜索軌跡（赤い移動経路）」がリアルタイムで描画されます。下山開始した隊員や、30分以上同期のない隊員は自動的に地図とリストから除外され、現在の実働隊員のみが表示されます。
+                  <strong className="text-white">団員のリアルタイム追跡：</strong> 地図上にすべての稼働中団員の「現在地（赤い名前ラベル）」と「これまでの捜索軌跡（赤い移動経路）」がリアルタイムで描画されます。下山開始した団員や、30分以上同期のない団員は自動的に地図とリストから除外され、現在の実働団員のみが表示されます。
                 </li>
                 <li>
-                  <strong className="text-white">指令の送信：</strong> 送信フォームから、特定の隊員または「全員」を選択し、指示内容を打ち込んで送信できます。送信すると、隊員のスマートフォンに即時届き、強制的にサイレン音による警報が鳴り響きます。
+                  <strong className="text-white">指令の送信：</strong> 送信フォームから、特定の団員または「全員」を選択し、指示内容を打ち込んで送信できます。送信すると、団員のスマートフォンに即時届き、強制的にサイレン音による警報が鳴り響きます。
                 </li>
                 <li>
-                  <strong className="text-white">CSV生ログ監視：</strong> 隊員から届いた極軽量CSVデータ（名前、ステータス、緯度経度、時間）の生ログ履歴が最新順に表示されます。
+                  <strong className="text-white">CSV生ログ監視：</strong> 団員から届いた極軽量CSVデータ（名前、ステータス、緯度経度、時間）の生ログ履歴が最新順に表示されます。
                 </li>
               </ul>
             </div>
@@ -192,7 +192,7 @@ export default function GuideView({ onGoBack }) {
             <div className="space-y-1 border-t border-gray-800 pt-3">
               <h4 className="font-black text-white">Q. 地図を事前にダウンロードする方法は？</h4>
               <p className="text-gray-400 leading-relaxed">
-                A. 活動隊員画面の「地図」タブを開き、電波のあるオンライン環境下で「大村市地図をダウンロード」ボタンを押します。約1〜2分でダウンロードが完了し、以降はオフライン時でも地図が読み込まれるようになります。
+                A. 活動団員画面の「地図」タブを開き、電波のあるオンライン環境下で「大村市地図をダウンロード」ボタンを押します。約1〜2分でダウンロードが完了し、以降はオフライン時でも地図が読み込まれるようになります。
               </p>
             </div>
           </div>
@@ -200,15 +200,14 @@ export default function GuideView({ onGoBack }) {
 
       </main>
 
-      {/* フッター */}
-      <footer className="border-t border-gray-950 bg-gray-900/40 py-12 px-4 text-center space-y-4">
-        <div className="inline-flex items-center gap-2">
-          <Compass size={18} className="text-rescue-500" />
-          <span className="text-sm font-black tracking-widest text-white uppercase">Search大村市消防団</span>
+      {/* フッター (著作権表示: 黒文字・詳細表記) */}
+      <footer className="border-t border-gray-900 bg-gray-950 py-12 px-6 text-center select-text">
+        <div className="max-w-xl mx-auto space-y-3 text-black font-bold">
+          <p className="text-xs">Copyright&copy;2026　大村市消防団　田中哲也. All rights reserved</p>
+          <p className="text-[10px] leading-relaxed opacity-90">
+            本アプリおよび本マニュアルに関する一切の権利（著作権を含む）は、開発者（大村市消防団　田中哲也）に帰属します。無断での複製、転載、再配布を禁じます。
+          </p>
         </div>
-        <p className="text-[10px] text-gray-600 font-bold">
-          © 2026 大村市消防団 山岳捜索支援プロジェクト. All Rights Reserved.
-        </p>
       </footer>
 
     </div>

@@ -130,7 +130,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
     }
   }, [currentPosition]);
 
-  // 他の隊員の軌跡・現在地を描画
+  // 他の団員の軌跡・現在地を描画
   useEffect(() => {
     if (!map.current || !map.current.isStyleLoaded()) return;
 

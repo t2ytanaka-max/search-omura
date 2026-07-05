@@ -120,7 +120,7 @@ export default function MemberView({ onGoBack }) {
         const lng = pos.coords.longitude.toFixed(5);
         
         // 衛星通信を想定した超軽量CSVテキスト圧縮（約30文字）
-        // [隊員ID],[名前],[ステータスコード],[緯度],[経度],[タイムスタンプ]
+        // [団員ID],[名前],[ステータスコード],[緯度],[経度],[タイムスタンプ]
         const payload = `${userId},${userName},${template.code},${lat},${lng},${Date.now()}`;
         
         // ローカル送信キューに突っ込む（圏外でも即時永続化）
@@ -191,16 +191,16 @@ export default function MemberView({ onGoBack }) {
               {isOnline ? '衛星接続中' : '圏外 (オフライン)'}
             </div>
             
-            {/* 隊員ID */}
+            {/* 団員ID */}
             <div className="text-[11px] font-mono font-bold px-2 py-1 bg-gray-800 rounded text-gray-300">
               ID: {userId}
             </div>
           </div>
         </div>
 
-        {/* 隊員名入力 */}
+        {/* 団員名入力 */}
         <div className="mt-3 flex items-center gap-2">
-          <span className="text-xs text-gray-400 font-bold whitespace-nowrap">隊員氏名:</span>
+          <span className="text-xs text-gray-400 font-bold whitespace-nowrap">団員氏名:</span>
           <input 
             type="text"
             value={userName}
@@ -234,6 +234,13 @@ export default function MemberView({ onGoBack }) {
                 <span className="text-[10px] opacity-60 font-mono mt-1 uppercase">TAP TO SEND ({tmpl.code})</span>
               </button>
             ))}
+            {/* 著作権表示 */}
+            <div className="col-span-2 mt-6 py-4 border-t border-gray-900 text-center text-black font-bold select-text">
+              <p className="text-[10px]">Copyright&copy;2026 大村市消防団 田中哲也. All rights reserved</p>
+              <p className="text-[8px] leading-tight opacity-90 mt-1">
+                本アプリおよび本マニュアルに関する一切の権利（著作権を含む）は、開発者（大村市消防団 田中哲也）に帰属します。無断での複製、転載、再配布を禁じます。
+              </p>
+            </div>
           </div>
         )}
 
