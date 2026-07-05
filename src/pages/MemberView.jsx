@@ -103,7 +103,7 @@ export default function MemberView({ onGoBack }) {
   const handleReport = (template) => {
     unlockAudio(); // 音声をアンロック
     if (!userName) {
-      alert("先に設定画面、または画面上部で名前を入力してください。");
+      alert("団員氏名欄に分団名、名前を入力してください。");
       return;
     }
 
