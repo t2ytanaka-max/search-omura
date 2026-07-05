@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Users, Send, LayoutDashboard, MessageSquare, RefreshCw, Radio, LogOut } from 'lucide-react';
 import OfflineMap from '../components/OfflineMap';
 import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -22,6 +22,81 @@ export default function AdminView({ onGoBack }) {
   const [statusMessage, setStatusMessage] = useState('');
   const [activeTab, setActiveTab] = useState('map'); // 'map', 'control', 'logs' (mobile responsive tabs)
 
+  const monitorStartTime = useRef(Date.now());
+  const isLoadedRef = useRef(false);
+
+  // 音声自動再生の制限解除 (ユーザーの最初のアクション時)
+  const unlockAudio = () => {
+    if (window.sharedAudioCtx) return;
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      // iOSブロック解除用無音再生
+      const buffer = ctx.createBuffer(1, 1, 22050);
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start(0);
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      window.sharedAudioCtx = ctx;
+      console.log("Admin Audio context unlocked.");
+    } catch (e) {
+      console.error("Failed to unlock admin audio:", e);
+    }
+  };
+
+  // 新着報告時の通知チャイム (ピッピッ音)
+  const playNotificationSound = () => {
+    try {
+      let ctx = window.sharedAudioCtx;
+      if (!ctx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        ctx = new AudioContext();
+        window.sharedAudioCtx = ctx;
+      }
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      
+      const now = ctx.currentTime;
+      
+      // 1音目: 880Hz (ラ)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(880, now);
+      gain1.gain.setValueAtTime(0.35, now);
+      gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.1);
+      
+      // 2音目: 1046.5Hz (ド)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(1046.5, now + 0.12);
+      gain2.gain.setValueAtTime(0.35, now + 0.12);
+      gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.12);
+      osc2.stop(now + 0.25);
+    } catch (e) {
+      console.error("Failed to play notify sound:", e);
+    }
+  };
+
+  // 新着報告時のスマホバイブレーション
+  const triggerVibration = () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([150, 100, 150]); // 短い2連振動
+    }
+  };
+
   // 1. Firebaseのログ受信監視 (リアルタイムデコード)
   useEffect(() => {
     const q = query(collection(db, 'search_logs'), orderBy('timestamp', 'asc'));
@@ -29,6 +104,24 @@ export default function AdminView({ onGoBack }) {
       const parsedLogs = [];
       const tracksMap = {};
       const latestMembers = {};
+
+      // 新着変更を検知して通知 (初期読み込み完了後かつ起動時刻より新しい場合にトリガー)
+      if (isLoadedRef.current) {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const data = change.doc.data();
+            if (!data.payload) return;
+            const parts = data.payload.split(',');
+            if (parts.length >= 6) {
+              const ts = parseInt(parts[5]);
+              if (ts && ts > monitorStartTime.current) {
+                playNotificationSound();
+                triggerVibration();
+              }
+            }
+          }
+        });
+      }
 
       snapshot.docs.forEach(doc => {
         const data = doc.data();
@@ -89,6 +182,9 @@ export default function AdminView({ onGoBack }) {
 
       setMemberTracks(activeTracks);
       setMembersInfo(latestMembers);
+      
+      // 初回の全読み込み完了を記録
+      isLoadedRef.current = true;
     });
 
     return () => unsubscribe();
@@ -116,7 +212,11 @@ export default function AdminView({ onGoBack }) {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] w-full bg-gray-950 text-white overflow-hidden">
+    <div 
+      onClick={unlockAudio}
+      onTouchStart={unlockAudio}
+      className="flex flex-col md:flex-row h-[100dvh] w-full bg-gray-950 text-white overflow-hidden"
+    >
       
       {/* モバイル用タブヘッダー (PCでは非表示) */}
       <div className="md:hidden flex items-center bg-gray-900 border-b border-gray-800 z-30 px-2 w-full">
