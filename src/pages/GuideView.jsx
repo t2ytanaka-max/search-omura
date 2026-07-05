@@ -200,9 +200,9 @@ export default function GuideView({ onGoBack }) {
 
       </main>
 
-      {/* フッター (著作権表示: 黒文字・詳細表記) */}
+      {/* フッター (著作権表示: 白文字・詳細表記) */}
       <footer className="border-t border-gray-900 bg-gray-950 py-12 px-6 text-center select-text">
-        <div className="max-w-xl mx-auto space-y-3 text-black font-bold">
+        <div className="max-w-xl mx-auto space-y-3 text-white font-bold">
           <p className="text-xs">Copyright&copy;2026　大村市消防団　田中哲也. All rights reserved</p>
           <p className="text-[10px] leading-relaxed opacity-90">
             本アプリおよび本マニュアルに関する一切の権利（著作権を含む）は、開発者（大村市消防団　田中哲也）に帰属します。無断での複製、転載、再配布を禁じます。
