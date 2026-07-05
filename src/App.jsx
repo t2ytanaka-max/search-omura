@@ -42,7 +42,7 @@ export default function App() {
   // 1. ポータル（起動時選択）画面
   if (viewMode === 'portal') {
     return (
-      <div className="flex flex-col items-center justify-center h-[100dvh] w-full bg-gray-950 text-white p-6 overflow-hidden select-none">
+      <div className="flex flex-col items-center justify-start h-[100dvh] w-full bg-gray-950 text-white p-6 overflow-y-auto select-none py-12">
         
         {/* アプリロゴ */}
         <div className="text-center space-y-4 mb-10 px-4">
@@ -93,7 +93,8 @@ export default function App() {
           </button>
         </div>
 
-        <div className="absolute bottom-4 text-center max-w-sm px-4 space-y-1 text-black font-bold select-text z-10">
+        {/* 著作権表示 (重なり防止のためマージンをとって通常フロー配置) */}
+        <div className="w-full max-w-sm px-4 space-y-1 text-black font-bold select-text mt-12 text-center pb-6">
           <div className="text-[10px]">Copyright&copy;2026 大村市消防団 田中哲也. All rights reserved</div>
           <div className="text-[8px] leading-tight opacity-90">
             本アプリおよび本マニュアルに関する一切の権利（著作権を含む）は、開発者（大村市消防団 田中哲也）に帰属します。無断での複製、転載、再配布を禁じます。
