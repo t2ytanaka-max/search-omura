@@ -88,9 +88,9 @@ export default function App() {
         <div className="w-full max-w-md pt-4 border-t border-gray-900 text-center">
           <button
             onClick={() => selectMode('guide')}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900/60 hover:bg-gray-900 active:scale-95 text-xs font-black text-rescue-500 hover:text-rescue-600 rounded-full border border-gray-800 transition-all shadow-md"
+            className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-gray-900/60 hover:bg-gray-900 active:scale-95 text-sm font-black text-rescue-500 hover:text-rescue-600 rounded-full border border-gray-800 transition-all shadow-md"
           >
-            <BookOpen size={12} />
+            <BookOpen size={15} />
             📖 公式利用者ガイド・技術解説
           </button>
         </div>
