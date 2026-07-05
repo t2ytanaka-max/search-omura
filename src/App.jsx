@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import MemberView from './pages/MemberView';
 import AdminView from './pages/AdminView';
-import { Shield, Users, Compass } from 'lucide-react';
+import GuideView from './pages/GuideView';
+import { Shield, Users, Compass, BookOpen } from 'lucide-react';
 
 export default function App() {
   const [viewMode, setViewMode] = useState(() => {
     // 起動時の初期モード判定 (直接URLから入った場合はポータルをスキップ)
     if (window.location.pathname === '/admin') return 'admin';
     if (window.location.pathname === '/member') return 'member';
+    if (window.location.pathname === '/guide') return 'guide';
     return 'portal';
   });
 
@@ -18,6 +20,8 @@ export default function App() {
         setViewMode('admin');
       } else if (window.location.pathname === '/member') {
         setViewMode('member');
+      } else if (window.location.pathname === '/guide') {
+        setViewMode('guide');
       } else if (window.location.pathname === '/') {
         setViewMode('portal');
       }
@@ -28,7 +32,10 @@ export default function App() {
 
   const selectMode = (mode) => {
     setViewMode(mode);
-    const newPath = mode === 'admin' ? '/admin' : '/member';
+    let newPath = '/';
+    if (mode === 'admin') newPath = '/admin';
+    if (mode === 'member') newPath = '/member';
+    if (mode === 'guide') newPath = '/guide';
     window.history.pushState({}, '', newPath);
   };
 
@@ -75,6 +82,17 @@ export default function App() {
           </button>
         </div>
 
+        {/* 利用者ガイドへのリンク */}
+        <div className="w-full max-w-md pt-6 border-t border-gray-900 mt-6 text-center">
+          <button
+            onClick={() => selectMode('guide')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900/60 hover:bg-gray-900 active:scale-95 text-xs font-black text-rescue-500 hover:text-rescue-600 rounded-full border border-gray-800 transition-all shadow-md"
+          >
+            <BookOpen size={12} />
+            📖 公式利用者ガイド・技術解説
+          </button>
+        </div>
+
         <div className="absolute bottom-6 text-[10px] text-gray-600 font-black">
           ⛰️ 消防団専用救助支援システム v1.1.0
         </div>
@@ -90,6 +108,11 @@ export default function App() {
   // 3. 本部画面 (ポータルに戻るための setViewMode を渡す)
   if (viewMode === 'admin') {
     return <AdminView onGoBack={() => selectMode('portal')} />;
+  }
+
+  // 4. 利用者ガイド画面 (ポータルに戻るための setViewMode を渡す)
+  if (viewMode === 'guide') {
+    return <GuideView onGoBack={() => selectMode('portal')} />;
   }
 
   return null;
