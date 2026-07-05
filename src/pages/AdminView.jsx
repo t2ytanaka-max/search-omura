@@ -154,7 +154,7 @@ export default function AdminView({ onGoBack }) {
       </div>
 
       {/* サイドバー（ステータス＆コントロール） */}
-      <aside className={`${activeTab === 'control' ? 'flex' : 'hidden'} md:flex md:w-80 w-full bg-gray-900 border-r border-gray-800 flex-col z-20 shadow-2xl h-full overflow-hidden`}>
+      <aside className={`${activeTab === 'control' ? 'flex' : 'hidden'} md:flex md:w-80 w-full bg-gray-900 border-r border-gray-800 flex-col z-20 shadow-2xl flex-1 md:h-full overflow-hidden`}>
         {/* ヘッダー */}
         <div className="hidden md:block p-6 border-b border-gray-800">
           <div className="flex justify-between items-center w-full">
