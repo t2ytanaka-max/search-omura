@@ -205,7 +205,7 @@ export default function MemberView({ onGoBack }) {
             type="text"
             value={userName}
             onChange={(e) => setUserName(e.target.value)}
-            placeholder="氏名を入力してください"
+            placeholder="分団氏名入力　例)15分団　大村太郎"
             className="flex-1 text-sm bg-gray-950 border border-gray-800 rounded-lg px-3 py-1 font-bold focus:outline-none focus:border-rescue-500 text-white"
           />
         </div>
