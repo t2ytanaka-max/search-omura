@@ -254,9 +254,17 @@ export default function AdminView({ onGoBack }) {
                 className="w-full bg-gray-900 border-2 border-gray-800 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:border-rescue-500 text-white font-black"
               >
                 <option value="all">全員 (全体指示)</option>
-                {Object.values(membersInfo).map(m => (
-                  <option key={m.userId} value={m.userId}>{m.userName} ({m.userId})</option>
-                ))}
+                {Object.values(membersInfo)
+                  .filter(m => {
+                    if (m.statusCode === 'ST06') return false;
+                    const isTimeout = (Date.now() - m.lastSync) > 30 * 60 * 1000;
+                    if (isTimeout) return false;
+                    return true;
+                  })
+                  .map(m => (
+                    <option key={m.userId} value={m.userId}>{m.userName} ({m.userId})</option>
+                  ))
+                }
               </select>
             </div>
 
