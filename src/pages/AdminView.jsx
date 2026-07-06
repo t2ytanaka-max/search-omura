@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Users, Send, LayoutDashboard, MessageSquare, RefreshCw, Radio, LogOut } from 'lucide-react';
+import { Users, Send, LayoutDashboard, MessageSquare, RefreshCw, Radio, LogOut, Trash2 } from 'lucide-react';
 import OfflineMap from '../components/OfflineMap';
-import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 const STATUS_MAP = {
@@ -211,6 +211,52 @@ export default function AdminView({ onGoBack }) {
     }
   };
 
+  // 受信CSV生ログ履歴の一括削除
+  const handleClearSearchLogs = async () => {
+    if (!window.confirm("本当に「すべての受信CSV生ログ履歴」を削除しますか？\n（現場の団員の端末の地図上からも軌跡・現在地表示が一度消去されます。この操作は取り消せません）")) {
+      return;
+    }
+    
+    setStatusMessage('生ログ削除中...');
+    try {
+      const q = query(collection(db, 'search_logs'));
+      const querySnapshot = await getDocs(q);
+      const deletePromises = [];
+      querySnapshot.forEach((document) => {
+        deletePromises.push(deleteDoc(doc(db, 'search_logs', document.id)));
+      });
+      await Promise.all(deletePromises);
+      setStatusMessage('生ログ履歴をすべて削除しました');
+      setTimeout(() => setStatusMessage(''), 4000);
+    } catch (error) {
+      console.error("Failed to clear search logs:", error);
+      setStatusMessage('生ログの削除に失敗しました。');
+    }
+  };
+
+  // 本部指令履歴の一括削除
+  const handleClearInstructions = async () => {
+    if (!window.confirm("本当に「すべての本部指令履歴」を削除しますか？\n（団員の端末に届いている指示履歴リストもすべて消去されます。この操作は取り消せません）")) {
+      return;
+    }
+    
+    setStatusMessage('指令履歴削除中...');
+    try {
+      const q = query(collection(db, 'instructions'));
+      const querySnapshot = await getDocs(q);
+      const deletePromises = [];
+      querySnapshot.forEach((document) => {
+        deletePromises.push(deleteDoc(doc(db, 'instructions', document.id)));
+      });
+      await Promise.all(deletePromises);
+      setStatusMessage('指令履歴をすべて削除しました');
+      setTimeout(() => setStatusMessage(''), 4000);
+    } catch (error) {
+      console.error("Failed to clear instructions:", error);
+      setStatusMessage('指令履歴の削除に失敗しました。');
+    }
+  };
+
   return (
     <div 
       onClick={unlockAudio}
@@ -388,8 +434,18 @@ export default function AdminView({ onGoBack }) {
               <p className="text-xs text-center font-black text-yellow-400">{statusMessage}</p>
             )}
           </form>
+
+          <button
+            type="button"
+            onClick={handleClearInstructions}
+            className="w-full py-2 bg-gray-950 hover:bg-red-950/40 text-gray-400 hover:text-red-400 text-xs font-bold rounded-lg transition-all border border-gray-800 hover:border-red-900/50 flex items-center justify-center gap-1 mt-2.5"
+            title="すべての本部送信指令を削除"
+          >
+            <Trash2 size={12} /> 本部指令履歴を一括削除
+          </button>
+
           {/* 著作権表示 */}
-          <div className="mt-4 pt-3 border-t border-gray-800 text-center text-black font-bold select-text">
+          <div className="mt-4 pt-3 border-t border-gray-800 text-center text-gray-400 font-bold select-text">
             <p className="text-[9px]">Copyright&copy;2026 大村市消防団 田中哲也. All rights reserved</p>
             <p className="text-[7px] leading-tight opacity-80 mt-1">
               本アプリおよび本マニュアルに関する一切の権利（著作権を含む）は、開発者（大村市消防団 田中哲也）に帰属します。無断での複製、転載、再配布を禁じます。
@@ -410,7 +466,17 @@ export default function AdminView({ onGoBack }) {
           <h2 className="text-sm font-black text-red-500 uppercase tracking-widest flex items-center gap-1.5">
             <Radio size={14} className="text-red-500 animate-pulse" /> 受信CSV生ログ履歴
           </h2>
-          <RefreshCw size={12} className="text-gray-400 hover:text-white cursor-pointer" />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleClearSearchLogs}
+              className="p-1.5 bg-red-950/40 text-red-400 hover:text-red-300 rounded border border-red-900/50 hover:bg-red-900/20 transition-all cursor-pointer"
+              title="受信生ログを一括削除"
+            >
+              <Trash2 size={12} />
+            </button>
+            <RefreshCw size={12} className="text-gray-400 hover:text-white cursor-pointer" />
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
           {logs.slice(0, 30).map((log) => (
