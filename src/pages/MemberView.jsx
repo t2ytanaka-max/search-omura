@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Play, MapPin, Send, Mail, CheckCircle, AlertTriangle, Moon, RefreshCw, Smartphone, LogOut } from 'lucide-react';
 import OfflineMap from '../components/OfflineMap';
 import NotificationManager from '../components/NotificationManager';
@@ -6,12 +6,12 @@ import { useSyncQueue } from '../hooks/useSyncQueue';
 import { addToQueue, getQueue } from '../lib/db';
 
 const REPORT_TEMPLATES = [
-  { code: 'ST01', text: '捜索中（定期連絡）', color: 'bg-blue-600 active:bg-blue-700' },
+  { code: 'ST01', text: '捜索開始(15分毎自動連絡)', color: 'bg-blue-600 active:bg-blue-700' },
   { code: 'ST02', text: '異状なし', color: 'bg-emerald-600 active:bg-emerald-700' },
   { code: 'ST03', text: '要救助者を発見', color: 'bg-yellow-500 active:bg-yellow-600 text-black' },
   { code: 'ST04', text: '救助要請（応援）', color: 'bg-red-600 active:bg-red-700' },
   { code: 'ST05', text: '危険箇所（滑落注意）', color: 'bg-purple-600 active:bg-purple-700' },
-  { code: 'ST06', text: '下山開始', color: 'bg-gray-600 active:bg-gray-700' }
+  { code: 'ST06', text: '捜索終了', color: 'bg-gray-600 active:bg-gray-700' }
 ];
 
 export default function MemberView({ onGoBack }) {
@@ -27,6 +27,8 @@ export default function MemberView({ onGoBack }) {
   });
   
   const [currentPosition, setCurrentPosition] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const autoReportTimerRef = useRef(null);
   const [activeAlert, setActiveAlert] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
 
@@ -73,6 +75,15 @@ export default function MemberView({ onGoBack }) {
     localStorage.setItem('search_member_name', userName);
   }, [userName]);
 
+  // アンマウント時のタイマー解除
+  useEffect(() => {
+    return () => {
+      if (autoReportTimerRef.current) {
+        clearInterval(autoReportTimerRef.current);
+      }
+    };
+  }, []);
+
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3000);
@@ -99,14 +110,8 @@ export default function MemberView({ onGoBack }) {
     }
   };
 
-  // 巨大報告ボタン押下時の処理
-  const handleReport = (template) => {
-    unlockAudio(); // 音声をアンロック
-    if (!userName) {
-      alert("団員氏名欄に分団名、名前を入力してください。");
-      return;
-    }
-
+  // 位置情報をFirestore送信（キュー経由）する共通関数
+  const sendPayload = (statusCode) => {
     if (!('geolocation' in navigator)) {
       alert("GPS機能が利用できません。");
       return;
@@ -119,33 +124,59 @@ export default function MemberView({ onGoBack }) {
         const lat = pos.coords.latitude.toFixed(5);
         const lng = pos.coords.longitude.toFixed(5);
         
-        // 衛星通信を想定した超軽量CSVテキスト圧縮（約30文字）
-        // [団員ID],[名前],[ステータスコード],[緯度],[経度],[タイムスタンプ]
-        const payload = `${userId},${userName},${template.code},${lat},${lng},${Date.now()}`;
+        // 衛星通信を想定した超軽量CSVテキスト圧縮
+        const payload = `${userId},${userName},${statusCode},${lat},${lng},${Date.now()}`;
         
-        // ローカル送信キューに突っ込む（圏外でも即時永続化）
         await addToQueue(payload);
         await updateQueueCount();
-        
         showToast("送信キューに保存しました");
-        
-        // オンラインなら即座に送信を試みる
         triggerSync();
       },
       async (err) => {
-        console.warn("Geolocation fallback: saving with previous coordinates or zero", err);
-        // GPS取得に失敗しても「送信待ち」のデータだけは最後の位置情報で保存する
+        console.warn("Geolocation fallback: saving with last known coordinates", err);
         const lat = currentPosition ? currentPosition.lat.toFixed(5) : "0.00000";
         const lng = currentPosition ? currentPosition.lng.toFixed(5) : "0.00000";
         
-        const payload = `${userId},${userName},${template.code},${lat},${lng},${Date.now()}`;
+        const payload = `${userId},${userName},${statusCode},${lat},${lng},${Date.now()}`;
         await addToQueue(payload);
         await updateQueueCount();
-        showToast("GPS取得タイムアウト。送信キューに一時保存。");
+        showToast("GPS取得タイムアウト。一時保存。");
         triggerSync();
       },
       { enableHighAccuracy: true, timeout: 6000, maximumAge: 5000 }
     );
+  };
+
+  // 巨大報告ボタン押下時の処理
+  const handleReport = (template) => {
+    unlockAudio(); // 音声をアンロック
+    if (!userName) {
+      alert("団員氏名欄に分団名、名前を入力してください。");
+      return;
+    }
+
+    // 15分毎自動位置送信タイマーの制御
+    if (template.code === 'ST01') {
+      if (!isSearching) {
+        setIsSearching(true);
+        if (autoReportTimerRef.current) {
+          clearInterval(autoReportTimerRef.current);
+        }
+        // 15分ごと (15 * 60 * 1000ms) の定期送信をセット
+        autoReportTimerRef.current = setInterval(() => {
+          sendPayload('ST01');
+        }, 15 * 60 * 1000);
+      }
+    } else if (template.code === 'ST06') {
+      setIsSearching(false);
+      if (autoReportTimerRef.current) {
+        clearInterval(autoReportTimerRef.current);
+        autoReportTimerRef.current = null;
+      }
+    }
+
+    // 初回・または通常の個別ステータス送信
+    sendPayload(template.code);
   };
 
   return (
@@ -224,16 +255,31 @@ export default function MemberView({ onGoBack }) {
         {/* タブ1: 活動報告 */}
         {activeTab === 'report' && (
           <div className="h-full p-4 grid grid-cols-2 gap-3 overflow-y-auto">
-            {REPORT_TEMPLATES.map((tmpl) => (
-              <button
-                key={tmpl.code}
-                onClick={() => handleReport(tmpl)}
-                className={`${tmpl.color} btn-active-scale rounded-2xl flex flex-col justify-center items-center p-6 text-center shadow-lg transition-transform`}
-              >
-                <span className="text-2xl font-black">{tmpl.text}</span>
-                <span className="text-[10px] opacity-60 font-mono mt-1 uppercase">TAP TO SEND ({tmpl.code})</span>
-              </button>
-            ))}
+            {REPORT_TEMPLATES.map((tmpl) => {
+              let displayText = tmpl.text;
+              let displayColor = tmpl.color;
+              let isSubmittingText = `TAP TO SEND (${tmpl.code})`;
+
+              if (tmpl.code === 'ST01') {
+                if (isSearching) {
+                  displayText = '捜索中';
+                  // 点滅アニメーション animate-pulse を付与し、かつアクティブ状態のボーダーを設定
+                  displayColor = 'bg-blue-600 animate-pulse border-2 border-white shadow-[0_0_15px_rgba(37,99,235,0.7)]';
+                  isSubmittingText = 'AUTO REPORTING...';
+                }
+              }
+
+              return (
+                <button
+                  key={tmpl.code}
+                  onClick={() => handleReport(tmpl)}
+                  className={`${displayColor} btn-active-scale rounded-2xl flex flex-col justify-center items-center p-6 text-center shadow-lg transition-transform`}
+                >
+                  <span className="text-2xl font-black">{displayText}</span>
+                  <span className="text-[10px] opacity-60 font-mono mt-1 uppercase">{isSubmittingText}</span>
+                </button>
+              );
+            })}
             {/* 著作権表示 */}
             <div className="col-span-2 mt-6 py-4 border-t border-gray-900 text-center text-black font-bold select-text">
               <p className="text-[10px]">Copyright&copy;2026 大村市消防団 田中哲也. All rights reserved</p>
