@@ -72,7 +72,7 @@ export default function GuideView({ onGoBack }) {
             </div>
             <h3 className="text-lg font-black text-white">個人情報を一切取り扱わない設計</h3>
             <p className="text-xs text-gray-400 leading-relaxed font-medium">
-              救助団員のプライバシー保護とセキュリティの観点から、名前の登録・ログイン情報は不要です。活動時には**「任意の設定名（例：大村一郎、1分団 等）」**と**「自動生成される匿名ランダムID」**のみで識別し、住所・電話番号などの個人情報はシステム上で一切取り扱いません。
+              救助団員のプライバシー保護とセキュリティの観点から、個人名の登録・ログイン情報は不要です。活動時には**「任意の所属名（例：1班、15分団 等）」**と**「自動生成される匿名ランダムID」**のみで識別し、氏名・住所・電話番号などの個人情報はシステム上で一切取り扱いません。
             </p>
           </div>
         </div>
@@ -141,7 +141,7 @@ export default function GuideView({ onGoBack }) {
               <h4 className="text-base font-black text-white">2. 活動団員の操作</h4>
               <ul className="list-decimal pl-4 text-xs text-gray-400 space-y-2.5 leading-relaxed">
                 <li>
-                  <strong className="text-white">名前の入力：</strong> 画面上部の入力欄に名前（例：分団名や団員名）を入力します。情報は端末に自動保存されます。
+                  <strong className="text-white">所属の入力：</strong> 画面上部の入力欄に所属（例：1班や15分団など）を入力します。情報は端末に自動保存されます。
                 </li>
                 <li>
                   <strong className="text-white">活動状況の送信：</strong> 画面中央の「捜索中」「異状なし」「救助要請」などの巨大ボタンを1つタップするだけで、その瞬間のGPS位置情報と現在のステータスがセットで即時送信（またはキューイング）されます。
@@ -158,13 +158,13 @@ export default function GuideView({ onGoBack }) {
               <h4 className="text-base font-black text-white">3. 本部での操作</h4>
               <ul className="list-decimal pl-4 text-xs text-gray-400 space-y-2.5 leading-relaxed">
                 <li>
-                  <strong className="text-white">団員のリアルタイム追跡：</strong> 地図上にすべての稼働中団員の「現在地（赤い名前ラベル）」と「これまでの捜索軌跡（赤い移動経路）」がリアルタイムで描画されます。下山開始した団員や、30分以上同期のない団員は自動的に地図とリストから除外され、現在の実働団員のみが表示されます。
+                  <strong className="text-white">団員のリアルタイム追跡：</strong> 地図上にすべての稼働中団員の「現在地（赤い所属ラベル）」と「これまでの捜索軌跡（赤い移動経路）」がリアルタイムで描画されます。下山開始した団員や、30分以上同期のない団員は自動的に地図とリストから除外され、現在の実働団員のみが表示されます。
                 </li>
                 <li>
                   <strong className="text-white">指令の送信：</strong> 送信フォームから、特定の団員または「全員」を選択し、指示内容を打ち込んで送信できます。送信すると、団員のスマートフォンに即時届き、強制的にサイレン音による警報が鳴り響きます。
                 </li>
                 <li>
-                  <strong className="text-white">CSV生ログ監視：</strong> 団員から届いた極軽量CSVデータ（名前、ステータス、緯度経度、時間）の生ログ履歴が最新順に表示されます。
+                  <strong className="text-white">CSV生ログ監視：</strong> 団員から届いた極軽量CSVデータ（所属、ステータス、緯度経度、時間）の生ログ履歴が最新順に表示されます。
                 </li>
               </ul>
             </div>
@@ -180,7 +180,7 @@ export default function GuideView({ onGoBack }) {
             <div className="space-y-1">
               <h4 className="font-black text-white">Q. iPhoneで本部からの指令アラーム音が鳴りません。</h4>
               <p className="text-gray-400 leading-relaxed">
-                A. iOSの仕様により、アプリ起動後に「画面のどこかを1回以上タップ」するまで音の自動再生がブロックされます。アプリ起動後、名前の入力や画面のどこかを一度タップしておくことで、次回から指令受信時に大音量のサイレンが鳴るようになります。
+                A. iOSの仕様により、アプリ起動後に「画面のどこかを1回以上タップ」するまで音の自動再生がブロックされます。アプリ起動後、所属の入力や画面のどこかを一度タップしておくことで、次回から指令受信時に大音量のサイレンが鳴るようになります。
               </p>
             </div>
             <div className="space-y-1 border-t border-gray-800 pt-3">

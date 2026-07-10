@@ -170,7 +170,7 @@ export default function MemberView({ onGoBack }) {
   const handleReport = (template) => {
     unlockAudio(); // 音声をアンロック
     if (!userName) {
-      alert("団員氏名欄に分団名、名前を入力してください。");
+      alert("所属記入欄に捜索班又は分団名を入力してください。");
       return;
     }
 
@@ -239,12 +239,12 @@ export default function MemberView({ onGoBack }) {
 
         {/* 団員名入力 */}
         <div className="mt-3 flex items-center gap-2">
-          <span className="text-xs text-gray-400 font-bold whitespace-nowrap">団員氏名:</span>
+          <span className="text-xs text-gray-400 font-bold whitespace-nowrap">所属記入:</span>
           <input 
             type="text"
             value={userName}
             onChange={(e) => setUserName(e.target.value)}
-            placeholder="分団氏名入力　例)15分団　大村太郎"
+            placeholder="捜索班又は分団名　例：1班または15分団"
             className="flex-1 text-sm bg-gray-950 border border-gray-800 rounded-lg px-3 py-1 font-bold focus:outline-none focus:border-rescue-500 text-white"
           />
         </div>
