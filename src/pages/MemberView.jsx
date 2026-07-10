@@ -27,7 +27,9 @@ export default function MemberView({ onGoBack }) {
   });
   
   const [currentPosition, setCurrentPosition] = useState(null);
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearching] = useState(() => {
+    return localStorage.getItem('search_is_searching') === 'true';
+  });
   const autoReportTimerRef = useRef(null);
   const [activeAlert, setActiveAlert] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
@@ -75,14 +77,31 @@ export default function MemberView({ onGoBack }) {
     localStorage.setItem('search_member_name', userName);
   }, [userName]);
 
-  // アンマウント時のタイマー解除
+  // 捜索状態（自動連絡）の永続化および再マウント時のタイマー自動再起動
   useEffect(() => {
+    localStorage.setItem('search_is_searching', isSearching ? 'true' : 'false');
+    
+    if (isSearching) {
+      if (autoReportTimerRef.current) {
+        clearInterval(autoReportTimerRef.current);
+      }
+      // 15分ごと (15 * 60 * 1000ms) の定期自動連絡を起動
+      autoReportTimerRef.current = setInterval(() => {
+        sendPayload('ST01');
+      }, 15 * 60 * 1000);
+    } else {
+      if (autoReportTimerRef.current) {
+        clearInterval(autoReportTimerRef.current);
+        autoReportTimerRef.current = null;
+      }
+    }
+
     return () => {
       if (autoReportTimerRef.current) {
         clearInterval(autoReportTimerRef.current);
       }
     };
-  }, []);
+  }, [isSearching]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -155,24 +174,13 @@ export default function MemberView({ onGoBack }) {
       return;
     }
 
-    // 15分毎自動位置送信タイマーの制御
+    // 15分毎自動位置送信タイマーの制御 (タイマー本体はuseEffectで制御します)
     if (template.code === 'ST01') {
       if (!isSearching) {
         setIsSearching(true);
-        if (autoReportTimerRef.current) {
-          clearInterval(autoReportTimerRef.current);
-        }
-        // 15分ごと (15 * 60 * 1000ms) の定期送信をセット
-        autoReportTimerRef.current = setInterval(() => {
-          sendPayload('ST01');
-        }, 15 * 60 * 1000);
       }
     } else if (template.code === 'ST06') {
       setIsSearching(false);
-      if (autoReportTimerRef.current) {
-        clearInterval(autoReportTimerRef.current);
-        autoReportTimerRef.current = null;
-      }
     }
 
     // 初回・または通常の個別ステータス送信
