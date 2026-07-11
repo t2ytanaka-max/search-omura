@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Users, Send, LayoutDashboard, MessageSquare, RefreshCw, Radio, LogOut, Trash2 } from 'lucide-react';
+import { Users, Send, LayoutDashboard, MessageSquare, RefreshCw, Radio, LogOut, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import OfflineMap from '../components/OfflineMap';
 import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -22,6 +22,7 @@ export default function AdminView({ onGoBack }) {
   const [statusMessage, setStatusMessage] = useState('');
   const [activeTab, setActiveTab] = useState('map'); // 'map', 'control', 'logs' (mobile responsive tabs)
   const [activeMessageAlert, setActiveMessageAlert] = useState(null); // 新着メッセージポップアップ
+  const [isLogsMinimized, setIsLogsMinimized] = useState(false); // 受信生ログ履歴の最小化状態
 
   const monitorStartTime = useRef(Date.now());
   const isLoadedRef = useRef(false);
@@ -140,15 +141,6 @@ export default function AdminView({ onGoBack }) {
     }
   };
 
-  // メッセージアラートバナーの自動非表示タイマー
-  useEffect(() => {
-    if (activeMessageAlert) {
-      const timer = setTimeout(() => {
-        setActiveMessageAlert(null);
-      }, 7000); // 7秒で自動消去
-      return () => clearTimeout(timer);
-    }
-  }, [activeMessageAlert]);
 
   // 1. Firebaseのログ受信監視 (リアルタイムデコード)
   useEffect(() => {
@@ -335,20 +327,21 @@ export default function AdminView({ onGoBack }) {
     >
       
       {/* 新着緊急伝達ポップアップアラート (中央配置) */}
+      {/* 新着緊急伝達ポップアップアラート (スマホ対応サイズ) */}
       {activeMessageAlert && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 bg-orange-600 border-2 border-white text-white p-5 rounded-2xl shadow-2xl max-w-sm w-11/12 animate-bounce">
-          <div className="flex items-center gap-2 mb-2 border-b border-orange-500 pb-2">
-            <Radio size={16} className="text-white animate-pulse" />
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-50 bg-orange-600 border-2 border-white text-white p-3.5 rounded-xl shadow-2xl max-w-[280px] sm:max-w-xs w-11/12 animate-pulse">
+          <div className="flex items-center gap-2 mb-1.5 border-b border-orange-500 pb-1.5">
+            <Radio size={14} className="text-white shrink-0" />
             <div>
-              <span className="text-[9px] font-mono font-bold tracking-widest bg-black/30 px-2 py-0.5 rounded-full uppercase">新着メッセージ</span>
-              <p className="text-xs font-black mt-1">送信者: {activeMessageAlert.userName}</p>
+              <span className="text-[8px] font-mono font-bold tracking-widest bg-black/30 px-1.5 py-0.5 rounded-full uppercase">新着メッセージ</span>
+              <p className="text-[10px] font-black mt-0.5">送信者: {activeMessageAlert.userName}</p>
             </div>
           </div>
-          <p className="text-base font-black tracking-tight leading-relaxed">{activeMessageAlert.text}</p>
+          <p className="text-xs font-black tracking-tight leading-normal break-all">{activeMessageAlert.text}</p>
           <button
             type="button"
             onClick={() => setActiveMessageAlert(null)}
-            className="w-full mt-3 py-1.5 bg-black/60 hover:bg-black active:scale-95 text-xs font-black rounded-lg transition-all border border-gray-800"
+            className="w-full mt-2.5 py-1 bg-black/60 hover:bg-black active:scale-95 text-[10px] font-black rounded-lg transition-all border border-gray-800"
           >
             確認して閉じる
           </button>
@@ -555,12 +548,12 @@ export default function AdminView({ onGoBack }) {
       </main>
 
       {/* 受信ログオーバーレイ：モバイルではログタブ選択時にスクロール表示、PCでは右上に絶対配置 */}
-      <div className={`${activeTab === 'logs' ? 'flex' : 'hidden'} md:flex md:absolute md:top-6 md:right-6 md:w-80 w-full bg-gray-900/95 md:bg-gray-900/90 border-2 border-gray-800 rounded-2xl p-4 shadow-2xl z-10 max-h-[350px] md:max-h-[350px] h-full md:h-auto overflow-hidden flex-col`}>
+      <div className={`${activeTab === 'logs' ? 'flex' : 'hidden'} md:flex md:absolute md:top-6 md:right-6 md:w-80 w-full bg-gray-900/95 md:bg-gray-900/90 border-2 border-gray-800 rounded-2xl p-4 shadow-2xl z-10 overflow-hidden flex-col transition-all duration-300 ${isLogsMinimized ? 'h-[52px] md:h-[52px] max-h-[52px]' : 'max-h-[350px] h-full md:h-auto'}`}>
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-sm font-black text-red-500 uppercase tracking-widest flex items-center gap-1.5">
+          <h2 className="text-sm font-black text-red-500 uppercase tracking-widest flex items-center gap-1.5 shrink-0">
             <Radio size={14} className="text-red-500 animate-pulse" /> 受信CSV生ログ履歴
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={handleClearSearchLogs}
@@ -569,10 +562,18 @@ export default function AdminView({ onGoBack }) {
             >
               <Trash2 size={12} />
             </button>
-            <RefreshCw size={12} className="text-gray-400 hover:text-white cursor-pointer" />
+            <button
+              type="button"
+              onClick={() => setIsLogsMinimized(!isLogsMinimized)}
+              className="p-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded border border-gray-750 hover:border-gray-600 transition-all cursor-pointer flex items-center justify-center"
+              title={isLogsMinimized ? "生ログ履歴を展開" : "生ログ履歴を最小化"}
+            >
+              {isLogsMinimized ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
+            </button>
+            <RefreshCw size={12} className="text-gray-400 hover:text-white cursor-pointer ml-1.5" />
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
+        <div className={`flex-1 overflow-y-auto space-y-1.5 pr-1 ${isLogsMinimized ? 'hidden' : 'block'}`}>
           {logs.slice(0, 30).map((log) => (
             <div key={log.id} className="p-2.5 bg-black/50 rounded-lg border border-gray-800 font-mono text-xs text-yellow-300">
               <div className="flex justify-between text-[10px] text-gray-200 font-black mb-1 border-b border-gray-900 pb-1">
