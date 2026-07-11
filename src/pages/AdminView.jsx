@@ -141,6 +141,10 @@ export default function AdminView({ onGoBack }) {
     }
   };
 
+  // UTF-8のバイト数を計算するヘルパー
+  const getByteLength = (str) => {
+    return new TextEncoder().encode(str).length;
+  };
 
   // 1. Firebaseのログ受信監視 (リアルタイムデコード)
   useEffect(() => {
@@ -510,10 +514,20 @@ export default function AdminView({ onGoBack }) {
             </div>
 
             <div>
-              <label className="text-xs font-black text-gray-200 block mb-1">指示内容 (テキスト)</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-black text-gray-200 block">指示内容 (テキスト)</label>
+                <span className={`text-[9px] font-mono font-bold ${Math.floor((90 - getByteLength(instructionText)) / 3) <= 5 ? 'text-red-500 animate-pulse' : 'text-gray-500'}`}>
+                  残り {Math.floor((90 - getByteLength(instructionText)) / 3)}文字
+                </span>
+              </div>
               <textarea
                 value={instructionText}
-                onChange={(e) => setInstructionText(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (getByteLength(val) <= 90) {
+                    setInstructionText(val);
+                  }
+                }}
                 placeholder="その場で待機せよ、等"
                 className="w-full h-16 bg-gray-900 border-2 border-gray-800 rounded-lg p-2 text-sm focus:outline-none focus:border-rescue-500 text-white font-black resize-none"
               />
