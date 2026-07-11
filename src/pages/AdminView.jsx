@@ -21,6 +21,7 @@ export default function AdminView({ onGoBack }) {
   const [targetMember, setTargetMember] = useState('all'); // 'all' or userId
   const [statusMessage, setStatusMessage] = useState('');
   const [activeTab, setActiveTab] = useState('map'); // 'map', 'control', 'logs' (mobile responsive tabs)
+  const [activeMessageAlert, setActiveMessageAlert] = useState(null); // 新着メッセージポップアップ
 
   const monitorStartTime = useRef(Date.now());
   const isLoadedRef = useRef(false);
@@ -97,6 +98,58 @@ export default function AdminView({ onGoBack }) {
     }
   };
 
+  // メッセージ付新着報告時の特別なアラート音 (ポーン・ポーン音)
+  const playAlertSound = () => {
+    try {
+      let ctx = window.sharedAudioCtx;
+      if (!ctx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        ctx = new AudioContext();
+        window.sharedAudioCtx = ctx;
+      }
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      const now = ctx.currentTime;
+      
+      // 1音目: 1174.66Hz (D6 / レ)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'triangle';
+      osc1.frequency.setValueAtTime(1174.66, now);
+      gain1.gain.setValueAtTime(0.4, now);
+      gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.4);
+      
+      // 2音目: 1174.66Hz (D6 / レ) - 少し間隔を空けて余韻を持たせる
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(1174.66, now + 0.35);
+      gain2.gain.setValueAtTime(0.4, now + 0.35);
+      gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.75);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.35);
+      osc2.stop(now + 0.75);
+    } catch (e) {
+      console.error("Failed to play alert sound:", e);
+    }
+  };
+
+  // メッセージアラートバナーの自動非表示タイマー
+  useEffect(() => {
+    if (activeMessageAlert) {
+      const timer = setTimeout(() => {
+        setActiveMessageAlert(null);
+      }, 7000); // 7秒で自動消去
+      return () => clearTimeout(timer);
+    }
+  }, [activeMessageAlert]);
+
   // 1. Firebaseのログ受信監視 (リアルタイムデコード)
   useEffect(() => {
     const q = query(collection(db, 'search_logs'), orderBy('timestamp', 'asc'));
@@ -115,7 +168,21 @@ export default function AdminView({ onGoBack }) {
             if (parts.length >= 6) {
               const ts = parseInt(parts[5]);
               if (ts && ts > monitorStartTime.current) {
-                playNotificationSound();
+                const message = parts[6] || '';
+                const uName = parts[1] || '団員';
+                
+                // メッセージがある場合は特別なアラート音＋ポップアップ表示
+                if (message) {
+                  playAlertSound();
+                  setActiveMessageAlert({
+                    id: change.doc.id,
+                    userName: uName,
+                    text: message,
+                    timestamp: Date.now()
+                  });
+                } else {
+                  playNotificationSound();
+                }
                 triggerVibration();
               }
             }
@@ -127,14 +194,15 @@ export default function AdminView({ onGoBack }) {
         const data = doc.data();
         if (!data.payload) return;
 
-        // CSV形式をデコード (例: userId,userName,statusCode,lat,lng,timestamp)
+        // CSV形式をデコード (例: userId,userName,statusCode,lat,lng,timestamp,messageText)
         const parts = data.payload.split(',');
         if (parts.length < 5) return;
 
-        const [userId, userName, statusCode, latStr, lngStr, tsStr] = parts;
+        const [userId, userName, statusCode, latStr, lngStr, tsStr, messageText] = parts;
         const lat = parseFloat(latStr);
         const lng = parseFloat(lngStr);
         const timestamp = parseInt(tsStr) || Date.now();
+        const message = messageText || '';
 
         const logEntry = {
           id: doc.id,
@@ -143,7 +211,8 @@ export default function AdminView({ onGoBack }) {
           statusCode,
           lat,
           lng,
-          timestamp
+          timestamp,
+          message
         };
         parsedLogs.push(logEntry);
 
@@ -164,7 +233,8 @@ export default function AdminView({ onGoBack }) {
           statusCode,
           lat,
           lng,
-          lastSync: timestamp
+          lastSync: timestamp,
+          message
         };
       });
 
@@ -261,8 +331,29 @@ export default function AdminView({ onGoBack }) {
     <div 
       onClick={unlockAudio}
       onTouchStart={unlockAudio}
-      className="flex flex-col md:flex-row h-[100dvh] w-full bg-gray-950 text-white overflow-hidden"
+      className="flex flex-col md:flex-row h-[100dvh] w-full bg-gray-950 text-white overflow-hidden relative"
     >
+      
+      {/* 新着緊急伝達ポップアップアラート (中央配置) */}
+      {activeMessageAlert && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 bg-orange-600 border-2 border-white text-white p-5 rounded-2xl shadow-2xl max-w-sm w-11/12 animate-bounce">
+          <div className="flex items-center gap-2 mb-2 border-b border-orange-500 pb-2">
+            <Radio size={16} className="text-white animate-pulse" />
+            <div>
+              <span className="text-[9px] font-mono font-bold tracking-widest bg-black/30 px-2 py-0.5 rounded-full uppercase">新着メッセージ</span>
+              <p className="text-xs font-black mt-1">送信者: {activeMessageAlert.userName}</p>
+            </div>
+          </div>
+          <p className="text-base font-black tracking-tight leading-relaxed">{activeMessageAlert.text}</p>
+          <button
+            type="button"
+            onClick={() => setActiveMessageAlert(null)}
+            className="w-full mt-3 py-1.5 bg-black/60 hover:bg-black active:scale-95 text-xs font-black rounded-lg transition-all border border-gray-800"
+          >
+            確認して閉じる
+          </button>
+        </div>
+      )}
       
       {/* モバイル用タブヘッダー (PCでは非表示) */}
       <div className="md:hidden flex items-center bg-gray-900 border-b border-gray-800 z-30 px-2 w-full">
@@ -363,6 +454,17 @@ export default function AdminView({ onGoBack }) {
                           {status.text}
                         </span>
                       </div>
+                      
+                      {/* メッセージ表示 */}
+                      {member.message && (
+                        <div className="bg-orange-950/20 border border-orange-900/50 p-2.5 rounded-lg flex items-start gap-2 text-xs">
+                          <MessageSquare size={14} className="text-orange-400 shrink-0 mt-0.5 animate-bounce" />
+                          <div>
+                            <span className="text-[9px] font-black text-orange-400 block mb-0.5">現場伝達:</span>
+                            <p className="text-white font-black leading-relaxed">{member.message}</p>
+                          </div>
+                        </div>
+                      )}
                       
                       {/* 高視認性の位置情報＆時間データ */}
                       <div className="space-y-1.5 font-mono text-xs">
@@ -485,7 +587,9 @@ export default function AdminView({ onGoBack }) {
                 <span>{log.userName} ({log.userId})</span>
                 <span>{new Date(log.timestamp).toLocaleTimeString()}</span>
               </div>
-              <div className="font-bold tracking-tight">{`${log.userId},${log.userName},${log.statusCode},${log.lat.toFixed(5)},${log.lng.toFixed(5)}`}</div>
+              <div className="font-bold tracking-tight">
+                {`${log.userId},${log.userName},${log.statusCode},${log.lat.toFixed(5)},${log.lng.toFixed(5)}${log.message ? `,${log.message}` : ''}`}
+              </div>
             </div>
           ))}
           {logs.length === 0 && (

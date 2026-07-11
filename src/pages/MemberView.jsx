@@ -33,6 +33,12 @@ export default function MemberView({ onGoBack }) {
   const autoReportTimerRef = useRef(null);
   const [activeAlert, setActiveAlert] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
+  const [messageText, setMessageText] = useState('');
+
+  // UTF-8のバイト数を計算するヘルパー
+  const getByteLength = (str) => {
+    return new TextEncoder().encode(str).length;
+  };
 
   // 1. 同期・キュー監視カスタムフック
   const {
@@ -85,9 +91,9 @@ export default function MemberView({ onGoBack }) {
       if (autoReportTimerRef.current) {
         clearInterval(autoReportTimerRef.current);
       }
-      // 15分ごと (15 * 60 * 1000ms) の定期自動連絡を起動
+      // 15分ごと (15 * 60 * 1000ms) の定期自動連絡を起動 (自動送信時はincludeMessage=false)
       autoReportTimerRef.current = setInterval(() => {
-        sendPayload('ST01');
+        sendPayload('ST01', false);
       }, 15 * 60 * 1000);
     } else {
       if (autoReportTimerRef.current) {
@@ -130,7 +136,8 @@ export default function MemberView({ onGoBack }) {
   };
 
   // 位置情報をFirestore送信（キュー経由）する共通関数
-  const sendPayload = (statusCode) => {
+  // 位置情報をFirestore送信（キュー経由）する共通関数
+  const sendPayload = (statusCode, includeMessage = false) => {
     if (!('geolocation' in navigator)) {
       alert("GPS機能が利用できません。");
       return;
@@ -138,17 +145,23 @@ export default function MemberView({ onGoBack }) {
 
     showToast("GPS取得中...");
 
+    // メッセージが有れば改行とカンマを除去、無ければ空文字
+    const cleanMsg = includeMessage ? messageText.trim().replace(/,/g, '、').replace(/\n/g, ' ') : '';
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude.toFixed(5);
         const lng = pos.coords.longitude.toFixed(5);
         
-        // 衛星通信を想定した超軽量CSVテキスト圧縮
-        const payload = `${userId},${userName},${statusCode},${lat},${lng},${Date.now()}`;
+        // 衛星通信を想定した超軽量CSVテキスト圧縮 (7項目目にメッセージを追加)
+        const payload = `${userId},${userName},${statusCode},${lat},${lng},${Date.now()},${cleanMsg}`;
         
         await addToQueue(payload);
         await updateQueueCount();
         showToast("送信キューに保存しました");
+        if (includeMessage) {
+          setMessageText(''); // 送信成功後にメッセージ欄をクリア
+        }
         triggerSync();
       },
       async (err) => {
@@ -156,10 +169,13 @@ export default function MemberView({ onGoBack }) {
         const lat = currentPosition ? currentPosition.lat.toFixed(5) : "0.00000";
         const lng = currentPosition ? currentPosition.lng.toFixed(5) : "0.00000";
         
-        const payload = `${userId},${userName},${statusCode},${lat},${lng},${Date.now()}`;
+        const payload = `${userId},${userName},${statusCode},${lat},${lng},${Date.now()},${cleanMsg}`;
         await addToQueue(payload);
         await updateQueueCount();
         showToast("GPS取得タイムアウト。一時保存。");
+        if (includeMessage) {
+          setMessageText(''); // クリア
+        }
         triggerSync();
       },
       { enableHighAccuracy: true, timeout: 6000, maximumAge: 5000 }
@@ -183,8 +199,8 @@ export default function MemberView({ onGoBack }) {
       setIsSearching(false);
     }
 
-    // 初回・または通常の個別ステータス送信
-    sendPayload(template.code);
+    // 初回・または通常の個別ステータス送信 (手動タップのため includeMessage=true)
+    sendPayload(template.code, true);
   };
 
   return (
@@ -247,6 +263,28 @@ export default function MemberView({ onGoBack }) {
             placeholder="捜索班又は分団名　例：1班または15分団"
             className="flex-1 text-sm bg-gray-950 border border-gray-800 rounded-lg px-3 py-1 font-bold focus:outline-none focus:border-rescue-500 text-white"
           />
+        </div>
+
+        {/* 本部への伝達事項 (バイト数制限付き) */}
+        <div className="mt-2.5 relative flex items-center gap-2">
+          <span className="text-xs text-gray-400 font-bold whitespace-nowrap">伝達事項:</span>
+          <div className="flex-1 relative flex items-center">
+            <input 
+              type="text"
+              value={messageText}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (getByteLength(val) <= 90) {
+                  setMessageText(val);
+                }
+              }}
+              placeholder="伝達テキスト (任意)　例:滑落箇所あり注意"
+              className="w-full text-sm bg-gray-950 border border-gray-800 rounded-lg pl-3 pr-20 py-1 font-bold focus:outline-none focus:border-rescue-500 text-white"
+            />
+            <span className={`absolute right-2 text-[9px] font-mono font-bold ${90 - getByteLength(messageText) <= 15 ? 'text-red-500 animate-pulse' : 'text-gray-500'}`}>
+              残り {90 - getByteLength(messageText)}B
+            </span>
+          </div>
         </div>
       </header>
 
