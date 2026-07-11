@@ -265,10 +265,10 @@ export default function MemberView({ onGoBack }) {
           />
         </div>
 
-        {/* 本部への伝達事項 (バイト数制限付き) */}
+        {/* 本部への伝達事項 (残り日本語文字数表示＆送信ボタン付き) */}
         <div className="mt-2.5 relative flex items-center gap-2">
           <span className="text-xs text-gray-400 font-bold whitespace-nowrap">伝達事項:</span>
-          <div className="flex-1 relative flex items-center">
+          <div className="flex-1 flex items-center gap-1.5 bg-gray-950 border border-gray-800 rounded-lg pl-3 pr-2 py-1 focus-within:border-rescue-500">
             <input 
               type="text"
               value={messageText}
@@ -278,12 +278,24 @@ export default function MemberView({ onGoBack }) {
                   setMessageText(val);
                 }
               }}
-              placeholder="伝達テキスト (任意)　例:滑落箇所あり注意"
-              className="w-full text-sm bg-gray-950 border border-gray-800 rounded-lg pl-3 pr-20 py-1 font-bold focus:outline-none focus:border-rescue-500 text-white"
+              placeholder="伝達テキスト (任意)　例:倒木あり通行不可"
+              className="flex-1 text-sm bg-transparent border-none outline-none text-white font-bold"
             />
-            <span className={`absolute right-2 text-[9px] font-mono font-bold ${90 - getByteLength(messageText) <= 15 ? 'text-red-500 animate-pulse' : 'text-gray-500'}`}>
-              残り {90 - getByteLength(messageText)}B
+            <span className={`text-[9px] font-mono font-bold shrink-0 ${Math.floor((90 - getByteLength(messageText)) / 3) <= 5 ? 'text-red-500 animate-pulse' : 'text-gray-500'}`}>
+              残り {Math.floor((90 - getByteLength(messageText)) / 3)}文字
             </span>
+            <button
+              type="button"
+              onClick={() => {
+                if (!messageText.trim()) return;
+                // 現在捜索中なら ST01、そうでないなら ST02 (異状なし) として送信
+                sendPayload(isSearching ? 'ST01' : 'ST02', true);
+              }}
+              className="p-1.5 bg-rescue-500 hover:bg-rescue-600 active:scale-95 text-white rounded-md transition-all shadow-md shrink-0 flex items-center justify-center cursor-pointer"
+              title="伝達事項を即時送信"
+            >
+              <Send size={12} />
+            </button>
           </div>
         </div>
       </header>
@@ -300,7 +312,7 @@ export default function MemberView({ onGoBack }) {
 
         {/* タブ1: 活動報告 */}
         {activeTab === 'report' && (
-          <div className="h-full p-4 grid grid-cols-2 gap-3 overflow-y-auto">
+          <div className="h-full p-3 grid grid-cols-2 gap-2.5 overflow-y-auto">
             {REPORT_TEMPLATES.map((tmpl) => {
               let displayText = tmpl.text;
               let displayColor = tmpl.color;
@@ -319,10 +331,10 @@ export default function MemberView({ onGoBack }) {
                 <button
                   key={tmpl.code}
                   onClick={() => handleReport(tmpl)}
-                  className={`${displayColor} btn-active-scale rounded-2xl flex flex-col justify-center items-center p-6 text-center shadow-lg transition-transform`}
+                  className={`${displayColor} btn-active-scale rounded-xl flex flex-col justify-center items-center py-4 px-2 text-center shadow-lg transition-transform`}
                 >
-                  <span className="text-2xl font-black">{displayText}</span>
-                  <span className="text-[10px] opacity-60 font-mono mt-1 uppercase">{isSubmittingText}</span>
+                  <span className="text-base sm:text-lg font-black leading-tight">{displayText}</span>
+                  <span className="text-[9px] opacity-60 font-mono mt-0.5 uppercase">{isSubmittingText}</span>
                 </button>
               );
             })}
