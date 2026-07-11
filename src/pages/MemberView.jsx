@@ -338,13 +338,6 @@ export default function MemberView({ onGoBack }) {
                 </button>
               );
             })}
-            {/* 著作権表示 */}
-            <div className="col-span-2 mt-6 py-4 border-t border-gray-900 text-center text-black font-bold select-text">
-              <p className="text-[10px]">Copyright&copy;2026 大村市消防団 田中哲也. All rights reserved</p>
-              <p className="text-[8px] leading-tight opacity-90 mt-1">
-                本アプリおよび本マニュアルに関する一切の権利（著作権を含む）は、開発者（大村市消防団 田中哲也）に帰属します。無断での複製、転載、再配布を禁じます。
-              </p>
-            </div>
           </div>
         )}
 

@@ -144,7 +144,10 @@ export default function GuideView({ onGoBack }) {
                   <strong className="text-white">所属の入力：</strong> 画面上部の入力欄に所属（例：1班や15分団など）を入力します。情報は端末に自動保存されます。
                 </li>
                 <li>
-                  <strong className="text-white">活動状況の送信：</strong> 画面中央の「捜索中」「異状なし」「救助要請」などの巨大ボタンを1つタップするだけで、その瞬間のGPS位置情報と現在のステータスがセットで即時送信（またはキューイング）されます。
+                  <strong className="text-white">自動位置送信とステータス送信：</strong> 「捜索開始(15分毎自動連絡)」ボタンをタップすると、ボタンが青く「捜索中」と点滅し、以降「捜索終了」ボタンが押されるまで15分間隔で自動的に現在位置を本部に報告し続けます。
+                </li>
+                <li>
+                  <strong className="text-white">伝達事項の個別送信：</strong> 入力欄の「伝達事項」にテキスト（最大30文字）を入力し、右隣の送信ボタンをタップすると、ステータスを変更することなく任意のテキスト情報を現在位置と共に本部に即時送信できます。
                 </li>
                 <li>
                   <strong className="text-white">オフライン地図：</strong> 「地図」タブに切り替え、「地図をダウンロード」ボタンを事前に押しておくことで、大村市山岳の等高線マップが一括キャッシュされ、電波のない山中でも自分の現在地を確認できます。
@@ -158,13 +161,16 @@ export default function GuideView({ onGoBack }) {
               <h4 className="text-base font-black text-white">3. 本部での操作</h4>
               <ul className="list-decimal pl-4 text-xs text-gray-400 space-y-2.5 leading-relaxed">
                 <li>
-                  <strong className="text-white">団員のリアルタイム追跡：</strong> 地図上にすべての稼働中団員の「現在地（赤い所属ラベル）」と「これまでの捜索軌跡（赤い移動経路）」がリアルタイムで描画されます。下山開始した団員や、30分以上同期のない団員は自動的に地図とリストから除外され、現在の実働団員のみが表示されます。
+                  <strong className="text-white">捜索状況の追跡：</strong> 地図上にすべての稼働中分団の「現在地（赤い所属ラベル）」と「これまでの捜索軌跡（赤い移動経路）」がリアルタイムで描画されます。また、サイドバーの「捜索中の班(分団)」リストで各班のステータスが一覧確認できます。
                 </li>
                 <li>
-                  <strong className="text-white">指令の送信：</strong> 送信フォームから、特定の団員または「全員」を選択し、指示内容を打ち込んで送信できます。送信すると、団員のスマートフォンに即時届き、強制的にサイレン音による警報が鳴り響きます。
+                  <strong className="text-white">新着テキスト警告ポップアップ：</strong> 現場からテキスト付きの伝達事項が届くと、特別な通知音（ポーン・ポーン）とともに、画面の中央に大きく新着テキストポップアップバナーが表示され、即座に現場の状況を把握できます。
                 </li>
                 <li>
-                  <strong className="text-white">CSV生ログ監視：</strong> 団員から届いた極軽量CSVデータ（所属、ステータス、緯度経度、時間）の生ログ履歴が最新順に表示されます。
+                  <strong className="text-white">指令の送信：</strong> 送信フォームから、特定の分団または「全員」を選択し、指示内容を打ち込んで送信できます。送信すると、団員のスマートフォンに即時届き、強制的にサイレン音による警報が鳴り響きます。
+                </li>
+                <li>
+                  <strong className="text-white">CSV生ログ監視：</strong> 団員から届いた極軽量CSVデータ（所属、ステータス、位置情報、任意のテキストなど）の生ログ履歴が最新順に表示されます。
                 </li>
               </ul>
             </div>
@@ -199,16 +205,6 @@ export default function GuideView({ onGoBack }) {
         </section>
 
       </main>
-
-      {/* フッター (著作権表示: 白文字・詳細表記) */}
-      <footer className="border-t border-gray-900 bg-gray-950 py-12 px-6 text-center select-text">
-        <div className="max-w-xl mx-auto space-y-3 text-white font-bold">
-          <p className="text-xs">Copyright&copy;2026　大村市消防団　田中哲也. All rights reserved</p>
-          <p className="text-[10px] leading-relaxed opacity-90">
-            本アプリおよび本マニュアルに関する一切の権利（著作権を含む）は、開発者（大村市消防団　田中哲也）に帰属します。無断での複製、転載、再配布を禁じます。
-          </p>
-        </div>
-      </footer>
 
     </div>
   );
