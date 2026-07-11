@@ -421,10 +421,10 @@ export default function AdminView({ onGoBack }) {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div className="flex justify-between items-center px-2">
             <h2 className="text-sm font-black text-gray-200 uppercase tracking-widest flex items-center gap-1.5">
-              <Users size={14} /> 稼働中の団員
+              <Users size={14} /> 捜索中の班(分団)
             </h2>
             <span className="bg-rescue-500 text-white text-xs font-black px-3 py-1 rounded-full shadow-md">
-              {Object.values(membersInfo).filter(m => m.statusCode !== 'ST06' && (Date.now() - m.lastSync) <= 30 * 60 * 1000).length}名
+              {Object.values(membersInfo).filter(m => m.statusCode !== 'ST06' && (Date.now() - m.lastSync) <= 30 * 60 * 1000).length}班
             </span>
           </div>
 
@@ -437,7 +437,7 @@ export default function AdminView({ onGoBack }) {
               if (isTimeout) return false;
               return true;
             }).length === 0 ? (
-              <p className="text-center py-8 text-gray-600 text-xs font-bold">稼働中の団員はいません</p>
+              <p className="text-center py-8 text-gray-600 text-xs font-bold">捜索中の班(分団)はありません</p>
             ) : (
               Object.values(membersInfo)
                 .filter(member => {
@@ -545,14 +545,6 @@ export default function AdminView({ onGoBack }) {
           >
             <Trash2 size={12} /> 本部指令履歴を一括削除
           </button>
-
-          {/* 著作権表示 */}
-          <div className="mt-4 pt-3 border-t border-gray-800 text-center text-gray-400 font-bold select-text">
-            <p className="text-[9px]">Copyright&copy;2026 大村市消防団 田中哲也. All rights reserved</p>
-            <p className="text-[7px] leading-tight opacity-80 mt-1">
-              本アプリおよび本マニュアルに関する一切の権利（著作権を含む）は、開発者（大村市消防団 田中哲也）に帰属します。無断での複製、転載、再配布を禁じます。
-            </p>
-          </div>
         </div>
 
       </aside>
