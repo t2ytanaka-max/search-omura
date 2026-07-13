@@ -247,10 +247,15 @@ export default function AdminView({ onGoBack }) {
         return true;
       });
 
-      // マーカー (要救助者発見、危険箇所など) も、現在アクティブ（捜索終了 ST06 していない）団員の報告のみに絞り込む
+      // マーカー (要救助者発見、危険箇所など) も、現在アクティブ（捜索終了 ST06 しておらず、かつ30分以内に通信同期がある）団員の報告のみに絞り込む
       const activeUserIds = new Set(
         Object.values(latestMembers)
-          .filter(m => m.statusCode !== 'ST06')
+          .filter(m => {
+            if (m.statusCode === 'ST06') return false;
+            const isTimeout = (Date.now() - m.lastSync) > 30 * 60 * 1000;
+            if (isTimeout) return false;
+            return true;
+          })
           .map(m => m.userId)
       );
 
