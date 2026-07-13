@@ -254,10 +254,22 @@ export default function AdminView({ onGoBack }) {
           .map(m => m.userId)
       );
 
+      // 各ユーザーの最新の「捜索開始 (ST01)」のタイムスタンプを取得 (過去セッションのゴミデータ混入防止)
+      const userSessionStartTimes = {};
+      parsedLogs.forEach(log => {
+        if (log.statusCode === 'ST01') {
+          // parsedLogsは時系列順(昇順)なので、ループの最後が最新の捜索開始時刻になる
+          userSessionStartTimes[log.userId] = log.timestamp;
+        }
+      });
+
       const activeMarkers = parsedLogs.filter(log => {
         const isReportStatus = ['ST02', 'ST03', 'ST04', 'ST05'].includes(log.statusCode);
         const isActive = activeUserIds.has(log.userId);
-        return isReportStatus && isActive;
+        if (!isReportStatus || !isActive) return false;
+
+        const sessionStartTime = userSessionStartTimes[log.userId] || 0;
+        return log.timestamp >= sessionStartTime;
       });
 
       setReportMarkers(activeMarkers);

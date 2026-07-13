@@ -34,7 +34,14 @@ export default function MemberView({ onGoBack }) {
   const [activeAlert, setActiveAlert] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
   const [messageText, setMessageText] = useState('');
-  const [myReports, setMyReports] = useState([]); // 自分が送信した報告マーカー (要救助者発見、危険箇所など)
+  const [myReports, setMyReports] = useState(() => {
+    const saved = localStorage.getItem('search_my_reports');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('search_my_reports', JSON.stringify(myReports));
+  }, [myReports]);
 
   // UTF-8のバイト数を計算するヘルパー
   const getByteLength = (str) => {
