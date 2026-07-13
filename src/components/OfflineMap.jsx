@@ -19,7 +19,14 @@ const OMURA_BOUNDS = {
   maxLat: 33.05
 };
 
-export default function OfflineMap({ currentPosition, memberTracks = [] }) {
+const MARKER_STYLE_MAP = {
+  'ST02': { text: '異状なし', color: 'bg-emerald-650 text-white border-white' },
+  'ST03': { text: '発見', color: 'bg-yellow-400 text-black border-black font-black' },
+  'ST04': { text: '要請', color: 'bg-red-600 text-white border-white animate-pulse' },
+  'ST05': { text: '危険', color: 'bg-purple-600 text-white border-white' }
+};
+
+export default function OfflineMap({ currentPosition, memberTracks = [], reportMarkers = [] }) {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const marker = useRef(null);
@@ -28,6 +35,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
   const renderedUserIdsRef = useRef([]); // 前回描画したユーザーIDの記録（クリーンアップ用）
+  const renderedReportMarkersRef = useRef([]); // 描画した報告マーカーの記録 (消去用)
 
   // 1. 起動時に IndexedDB のタイルデータをすべてメモリ（State）にロードする
   // これにより transformRequest 内で「同期的」に ObjectURL を返せるようになり、MapLibreがクラッシュしません
@@ -207,6 +215,53 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
     renderedUserIdsRef.current = memberTracks.map(t => t.userId);
 
   }, [memberTracks]);
+
+  // 3. 報告マーカー (要救助者発見、危険箇所など) を描画
+  useEffect(() => {
+    if (!map.current || !map.current.isStyleLoaded()) return;
+
+    // 前回の報告マーカーを一旦すべてクリーンアップする
+    renderedReportMarkersRef.current.forEach(markerInstance => {
+      markerInstance.remove();
+    });
+    renderedReportMarkersRef.current = [];
+
+    const newMarkers = [];
+
+    // 新規描画
+    reportMarkers.forEach((markerData) => {
+      const { lat, lng, statusCode, userName } = markerData;
+      const style = MARKER_STYLE_MAP[statusCode];
+      if (!style) return; // プロット対象外のステータス
+
+      // マーカー要素を作成
+      const el = document.createElement('div');
+      el.className = `px-2 py-1 ${style.color} text-[9px] font-black rounded-lg border shadow-md flex flex-col items-center gap-0.5 transform -translate-y-4`;
+      
+      const labelSpan = document.createElement('span');
+      labelSpan.innerText = style.text;
+      el.appendChild(labelSpan);
+
+      if (userName) {
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'text-[7px] opacity-75 font-normal scale-90 border-t border-white/20 pt-0.5';
+        nameSpan.innerText = userName;
+        el.appendChild(nameSpan);
+      }
+
+      try {
+        const m = new maplibregl.Marker({ element: el })
+          .setLngLat([lng, lat])
+          .addTo(map.current);
+        newMarkers.push(m);
+      } catch (e) {
+        console.error("Failed to add report marker to map:", e);
+      }
+    });
+
+    renderedReportMarkersRef.current = newMarkers;
+
+  }, [reportMarkers]);
 
   // 地図の事前ダウンロード (一括キャッシュ)
   const downloadOmuraMap = async () => {

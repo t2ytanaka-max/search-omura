@@ -34,6 +34,7 @@ export default function MemberView({ onGoBack }) {
   const [activeAlert, setActiveAlert] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
   const [messageText, setMessageText] = useState('');
+  const [myReports, setMyReports] = useState([]); // 自分が送信した報告マーカー (要救助者発見、危険箇所など)
 
   // UTF-8のバイト数を計算するヘルパー
   const getByteLength = (str) => {
@@ -138,6 +139,11 @@ export default function MemberView({ onGoBack }) {
         await addToQueue(payload);
         await updateQueueCount();
         showToast("送信キューに保存しました");
+        if (['ST02', 'ST03', 'ST04', 'ST05'].includes(statusCode)) {
+          setMyReports(prev => [...prev, { lat: parseFloat(lat), lng: parseFloat(lng), statusCode, userName }]);
+        } else if (statusCode === 'ST06') {
+          setMyReports([]);
+        }
         if (includeMessage) {
           setMessageText(''); // 送信成功後にメッセージ欄をクリア
         }
@@ -152,6 +158,11 @@ export default function MemberView({ onGoBack }) {
         await addToQueue(payload);
         await updateQueueCount();
         showToast("GPS取得タイムアウト。一時保存。");
+        if (['ST02', 'ST03', 'ST04', 'ST05'].includes(statusCode)) {
+          setMyReports(prev => [...prev, { lat: parseFloat(lat), lng: parseFloat(lng), statusCode, userName }]);
+        } else if (statusCode === 'ST06') {
+          setMyReports([]);
+        }
         if (includeMessage) {
           setMessageText(''); // クリア
         }
@@ -323,7 +334,7 @@ export default function MemberView({ onGoBack }) {
         {/* タブ2: オフライン地図 */}
         {activeTab === 'map' && (
           <div className="w-full h-full">
-            <OfflineMap currentPosition={currentPosition} />
+            <OfflineMap currentPosition={currentPosition} reportMarkers={myReports} />
           </div>
         )}
 

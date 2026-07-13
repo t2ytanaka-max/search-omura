@@ -23,6 +23,7 @@ export default function AdminView({ onGoBack }) {
   const [activeTab, setActiveTab] = useState('map'); // 'map', 'control', 'logs' (mobile responsive tabs)
   const [activeMessageAlert, setActiveMessageAlert] = useState(null); // 新着メッセージポップアップ
   const [isLogsMinimized, setIsLogsMinimized] = useState(false); // 受信生ログ履歴の最小化状態
+  const [reportMarkers, setReportMarkers] = useState([]); // 報告されたマーカー(要救助者発見、危険箇所など)
 
   const monitorStartTime = useRef(Date.now());
   const isLoadedRef = useRef(false);
@@ -246,6 +247,20 @@ export default function AdminView({ onGoBack }) {
         return true;
       });
 
+      // マーカー (要救助者発見、危険箇所など) も、現在アクティブ（捜索終了 ST06 していない）団員の報告のみに絞り込む
+      const activeUserIds = new Set(
+        Object.values(latestMembers)
+          .filter(m => m.statusCode !== 'ST06')
+          .map(m => m.userId)
+      );
+
+      const activeMarkers = parsedLogs.filter(log => {
+        const isReportStatus = ['ST02', 'ST03', 'ST04', 'ST05'].includes(log.statusCode);
+        const isActive = activeUserIds.has(log.userId);
+        return isReportStatus && isActive;
+      });
+
+      setReportMarkers(activeMarkers);
       setMemberTracks(activeTracks);
       setMembersInfo(latestMembers);
       
@@ -558,7 +573,7 @@ export default function AdminView({ onGoBack }) {
 
       {/* 地図エリア：モバイルでは地図タブ選択時のみ表示 */}
       <main className={`${activeTab === 'map' ? 'block' : 'hidden'} md:block flex-1 relative bg-gray-950 h-full`}>
-        <OfflineMap memberTracks={memberTracks} />
+        <OfflineMap memberTracks={memberTracks} reportMarkers={reportMarkers} />
       </main>
 
       {/* 受信ログオーバーレイ：モバイルではログタブ選択時にスクロール表示、PCでは右上に絶対配置 */}
