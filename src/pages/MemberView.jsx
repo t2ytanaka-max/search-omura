@@ -6,7 +6,7 @@ import { useSyncQueue } from '../hooks/useSyncQueue';
 import { addToQueue, getQueue } from '../lib/db';
 
 const REPORT_TEMPLATES = [
-  { code: 'ST01', text: '捜索開始(15分毎自動連絡)', color: 'bg-blue-600 active:bg-blue-700' },
+  { code: 'ST01', text: '捜索開始', color: 'bg-blue-600 active:bg-blue-700' },
   { code: 'ST02', text: '異状なし', color: 'bg-emerald-600 active:bg-emerald-700' },
   { code: 'ST03', text: '要救助者を発見', color: 'bg-yellow-500 active:bg-yellow-600 text-black' },
   { code: 'ST04', text: '救助要請（応援）', color: 'bg-red-600 active:bg-red-700' },
@@ -83,30 +83,9 @@ export default function MemberView({ onGoBack }) {
     localStorage.setItem('search_member_name', userName);
   }, [userName]);
 
-  // 捜索状態（自動連絡）の永続化および再マウント時のタイマー自動再起動
+  // 捜索状態の永続化
   useEffect(() => {
     localStorage.setItem('search_is_searching', isSearching ? 'true' : 'false');
-    
-    if (isSearching) {
-      if (autoReportTimerRef.current) {
-        clearInterval(autoReportTimerRef.current);
-      }
-      // 15分ごと (15 * 60 * 1000ms) の定期自動連絡を起動 (自動送信時はincludeMessage=false)
-      autoReportTimerRef.current = setInterval(() => {
-        sendPayload('ST01', false);
-      }, 15 * 60 * 1000);
-    } else {
-      if (autoReportTimerRef.current) {
-        clearInterval(autoReportTimerRef.current);
-        autoReportTimerRef.current = null;
-      }
-    }
-
-    return () => {
-      if (autoReportTimerRef.current) {
-        clearInterval(autoReportTimerRef.current);
-      }
-    };
   }, [isSearching]);
 
   const showToast = (msg) => {
@@ -320,10 +299,10 @@ export default function MemberView({ onGoBack }) {
 
               if (tmpl.code === 'ST01') {
                 if (isSearching) {
-                  displayText = '捜索中';
+                  displayText = '現在地報告(ボタンを押して下さい)';
                   // 点滅アニメーション animate-pulse を付与し、かつアクティブ状態のボーダーを設定
                   displayColor = 'bg-blue-600 animate-pulse border-2 border-white shadow-[0_0_15px_rgba(37,99,235,0.7)]';
-                  isSubmittingText = 'AUTO REPORTING...';
+                  isSubmittingText = 'TAP TO REPORT';
                 }
               }
 
