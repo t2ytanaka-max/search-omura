@@ -147,9 +147,11 @@ export default function MemberView({ onGoBack }) {
         await updateQueueCount();
         showToast("送信キューに保存しました");
         if (['ST02', 'ST03', 'ST04', 'ST05'].includes(statusCode)) {
-          setMyReports(prev => [...prev, { lat: parseFloat(lat), lng: parseFloat(lng), statusCode, userName }]);
+          const uniqueId = `${userId}-${Date.now()}`;
+          setMyReports(prev => [...prev, { id: uniqueId, lat: parseFloat(lat), lng: parseFloat(lng), statusCode, userName }]);
         } else if (statusCode === 'ST06') {
-          setMyReports([]);
+          // 捜索終了時は、各捜索班の安全共通情報である「危険箇所(ST05)」の紫ピンのみを残し、他をクリアする
+          setMyReports(prev => prev.filter(r => r.statusCode === 'ST05'));
         }
         if (includeMessage) {
           setMessageText(''); // 送信成功後にメッセージ欄をクリア
@@ -166,9 +168,10 @@ export default function MemberView({ onGoBack }) {
         await updateQueueCount();
         showToast("GPS取得タイムアウト。一時保存。");
         if (['ST02', 'ST03', 'ST04', 'ST05'].includes(statusCode)) {
-          setMyReports(prev => [...prev, { lat: parseFloat(lat), lng: parseFloat(lng), statusCode, userName }]);
+          const uniqueId = `${userId}-${Date.now()}`;
+          setMyReports(prev => [...prev, { id: uniqueId, lat: parseFloat(lat), lng: parseFloat(lng), statusCode, userName }]);
         } else if (statusCode === 'ST06') {
-          setMyReports([]);
+          setMyReports(prev => prev.filter(r => r.statusCode === 'ST05'));
         }
         if (includeMessage) {
           setMessageText(''); // クリア
@@ -177,6 +180,11 @@ export default function MemberView({ onGoBack }) {
       },
       { enableHighAccuracy: true, timeout: 6000, maximumAge: 5000 }
     );
+  };
+
+  // 自分のプロットマーカーのローカル削除処理
+  const handleDeleteMyReport = (markerId) => {
+    setMyReports(prev => prev.filter(r => r.id !== markerId));
   };
 
   // 巨大報告ボタン押下時の処理
@@ -341,7 +349,7 @@ export default function MemberView({ onGoBack }) {
         {/* タブ2: オフライン地図 */}
         {activeTab === 'map' && (
           <div className="w-full h-full">
-            <OfflineMap currentPosition={currentPosition} reportMarkers={myReports} />
+            <OfflineMap currentPosition={currentPosition} reportMarkers={myReports} onDeleteMarker={handleDeleteMyReport} />
           </div>
         )}
 

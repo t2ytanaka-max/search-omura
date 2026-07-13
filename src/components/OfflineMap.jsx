@@ -26,7 +26,7 @@ const MARKER_STYLE_MAP = {
   'ST05': { text: '危険', color: 'bg-purple-600 text-white border-white' }
 };
 
-export default function OfflineMap({ currentPosition, memberTracks = [], reportMarkers = [] }) {
+export default function OfflineMap({ currentPosition, memberTracks = [], reportMarkers = [], onDeleteMarker }) {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const marker = useRef(null);
@@ -232,13 +232,13 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
 
     // 新規描画
     reportMarkers.forEach((markerData) => {
-      const { lat, lng, statusCode, userName } = markerData;
+      const { id, lat, lng, statusCode, userName } = markerData;
       const style = MARKER_STYLE_MAP[statusCode];
       if (!style) return; // プロット対象外のステータス
 
       // マーカー要素を作成
       const el = document.createElement('div');
-      el.className = `px-2 py-1 ${style.color} text-[9px] font-black rounded-lg border shadow-md flex flex-col items-center gap-0.5 transform -translate-y-4`;
+      el.className = `px-2 py-1 ${style.color} text-[9px] font-black rounded-lg border shadow-md flex flex-col items-center gap-0.5 transform -translate-y-4 cursor-pointer select-none`;
       
       const labelSpan = document.createElement('span');
       labelSpan.innerText = style.text;
@@ -250,6 +250,38 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
         nameSpan.innerText = userName;
         el.appendChild(nameSpan);
       }
+
+      // 長押し削除トリガー (右クリックまたはロングタップ)
+      const handleDeleteTrigger = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (onDeleteMarker && id) {
+          if (window.confirm(`この「${style.text}」ピンを削除しますか？\n※削除すると本部および他メンバーの画面からも消去されます。`)) {
+            onDeleteMarker(id);
+          }
+        }
+      };
+
+      el.addEventListener('contextmenu', handleDeleteTrigger);
+
+      // スマホ用タッチタイマー長押し検知 (700ms)
+      let touchTimer = null;
+      el.addEventListener('touchstart', (e) => {
+        touchTimer = setTimeout(() => {
+          handleDeleteTrigger(e);
+        }, 700);
+      }, { passive: true });
+
+      const clearTouchTimer = () => {
+        if (touchTimer) {
+          clearTimeout(touchTimer);
+          touchTimer = null;
+        }
+      };
+
+      el.addEventListener('touchend', clearTouchTimer);
+      el.addEventListener('touchmove', clearTouchTimer);
+      el.addEventListener('touchcancel', clearTouchTimer);
 
       try {
         const m = new maplibregl.Marker({ element: el })

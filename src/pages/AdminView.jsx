@@ -270,8 +270,13 @@ export default function AdminView({ onGoBack }) {
 
       const activeMarkers = parsedLogs.filter(log => {
         const isReportStatus = ['ST02', 'ST03', 'ST04', 'ST05'].includes(log.statusCode);
+        if (!isReportStatus) return false;
+
+        // ST05 (危険箇所・滑落注意) は捜索班全員に共有すべき情報のため、捜索終了(ST06)やタイムアウトにかかわらず常に表示したままにする
+        if (log.statusCode === 'ST05') return true;
+
         const isActive = activeUserIds.has(log.userId);
-        if (!isReportStatus || !isActive) return false;
+        if (!isActive) return false;
 
         const sessionStartTime = userSessionStartTimes[log.userId] || 0;
         return log.timestamp >= sessionStartTime;
@@ -287,6 +292,18 @@ export default function AdminView({ onGoBack }) {
 
     return () => unsubscribe();
   }, []);
+
+  // 報告マーカーの削除処理 (Firestoreからドキュメント削除)
+  const handleDeleteMarker = async (markerId) => {
+    try {
+      await deleteDoc(doc(db, 'search_logs', markerId));
+      setStatusMessage("ピンを地図から削除しました。");
+      setTimeout(() => setStatusMessage(""), 3000);
+    } catch (e) {
+      console.error("Failed to delete marker:", e);
+      alert("ピンの削除に失敗しました。");
+    }
+  };
 
   // 2. 本部指示の送信
   const handleSendInstruction = async (e) => {
@@ -590,7 +607,7 @@ export default function AdminView({ onGoBack }) {
 
       {/* 地図エリア：モバイルでは地図タブ選択時のみ表示 */}
       <main className={`${activeTab === 'map' ? 'block' : 'hidden'} md:block flex-1 relative bg-gray-950 h-full`}>
-        <OfflineMap memberTracks={memberTracks} reportMarkers={reportMarkers} />
+        <OfflineMap memberTracks={memberTracks} reportMarkers={reportMarkers} onDeleteMarker={handleDeleteMarker} />
       </main>
 
       {/* 受信ログオーバーレイ：モバイルではログタブ選択時にスクロール表示、PCでは右上に絶対配置 */}
