@@ -20,7 +20,7 @@ const OMURA_BOUNDS = {
 };
 
 const MARKER_STYLE_MAP = {
-  'ST02': { text: '異状なし', color: 'bg-emerald-650 text-white border-white' },
+  'ST02': { text: '異状なし', color: 'bg-emerald-600 text-white border-white' },
   'ST03': { text: '発見', color: 'bg-yellow-400 text-black border-black font-black' },
   'ST04': { text: '要請', color: 'bg-red-600 text-white border-white animate-pulse' },
   'ST05': { text: '危険', color: 'bg-purple-600 text-white border-white' }
@@ -34,6 +34,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
   const [cachedTilesMap, setCachedTilesMap] = useState(new Map()); // メモリ上のタイルキャッシュ
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
+  const [isStyleLoaded, setIsStyleLoaded] = useState(false); // 地図読み込み完了フラグ
   const renderedUserIdsRef = useRef([]); // 前回描画したユーザーIDの記録（クリーンアップ用）
   const renderedReportMarkersRef = useRef([]); // 描画した報告マーカーの記録 (消去用)
 
@@ -113,6 +114,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
     map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
 
     map.current.on('load', () => {
+      setIsStyleLoaded(true);
       map.current.resize();
     });
     setTimeout(() => {
@@ -144,7 +146,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
 
   // 他の団員の軌跡・現在地を描画
   useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+    if (!map.current || !isStyleLoaded) return;
 
     // 前回の描画データを一旦すべてクリーンアップする (消去漏れ防止)
     renderedUserIdsRef.current.forEach(userId => {
@@ -214,11 +216,11 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
     // 今回描画したIDリストを保存して次回の消去に使用する
     renderedUserIdsRef.current = memberTracks.map(t => t.userId);
 
-  }, [memberTracks]);
+  }, [memberTracks, isStyleLoaded]);
 
   // 3. 報告マーカー (要救助者発見、危険箇所など) を描画
   useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+    if (!map.current || !isStyleLoaded) return;
 
     // 前回の報告マーカーを一旦すべてクリーンアップする
     renderedReportMarkersRef.current.forEach(markerInstance => {
@@ -261,7 +263,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
 
     renderedReportMarkersRef.current = newMarkers;
 
-  }, [reportMarkers]);
+  }, [reportMarkers, isStyleLoaded]);
 
   // 地図の事前ダウンロード (一括キャッシュ)
   const downloadOmuraMap = async () => {
