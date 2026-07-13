@@ -111,18 +111,22 @@ export default function OfflineMap({ currentPosition, memberTracks = [] }) {
       if (map.current) map.current.resize();
     }, 500);
 
-    // 現在地マーカー
-    const el = document.createElement('div');
-    el.className = 'w-6 h-6 bg-blue-500 border-4 border-white rounded-full shadow-lg animate-pulse';
-    marker.current = new maplibregl.Marker(el)
-      .setLngLat(initialCenter)
-      .addTo(map.current);
+    // 現在地マーカー (位置情報が渡されている場合＝団員画面のみ表示)
+    if (currentPosition) {
+      const el = document.createElement('div');
+      el.className = 'w-6 h-6 bg-blue-500 border-4 border-white rounded-full shadow-lg animate-pulse';
+      marker.current = new maplibregl.Marker(el)
+        .setLngLat(initialCenter)
+        .addTo(map.current);
+    }
   }, [cachedTilesMap]); // キャッシュがロードされたら地図を再初期化または追従
 
   // 自分の現在地マーカー更新＆中心移動
   useEffect(() => {
-    if (map.current && currentPosition && marker.current) {
-      marker.current.setLngLat([currentPosition.lng, currentPosition.lat]);
+    if (map.current && currentPosition) {
+      if (marker.current) {
+        marker.current.setLngLat([currentPosition.lng, currentPosition.lat]);
+      }
       map.current.easeTo({
         center: [currentPosition.lng, currentPosition.lat],
         duration: 1000
