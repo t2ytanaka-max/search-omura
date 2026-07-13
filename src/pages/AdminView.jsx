@@ -221,6 +221,7 @@ export default function AdminView({ onGoBack }) {
             points: []
           };
         }
+        tracksMap[userId].userName = userName; // 所属変更に追従するため最新の名称で上書き
         tracksMap[userId].points.push({ lat, lng, timestamp });
 
         // 最新のステータスと位置情報を上書き保持
