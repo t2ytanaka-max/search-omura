@@ -329,7 +329,7 @@ export default function AdminView({ onGoBack }) {
 
   // 受信CSV生ログ履歴の一括削除
   const handleClearSearchLogs = async () => {
-    if (!window.confirm("本当に「すべての受信CSV生ログ履歴」を削除しますか？\n（現場の団員の端末の地図上からも軌跡・現在地表示が一度消去されます。この操作は取り消せません）")) {
+    if (!window.confirm("本当に「すべての受信CSV生ログ履歴」を削除しますか？\n※「危険箇所(紫ピン)」は安全共有情報として保護され、地図上に残ります。この操作は取り消せません）")) {
       return;
     }
     
@@ -339,10 +339,18 @@ export default function AdminView({ onGoBack }) {
       const querySnapshot = await getDocs(q);
       const deletePromises = [];
       querySnapshot.forEach((document) => {
-        deletePromises.push(deleteDoc(doc(db, 'search_logs', document.id)));
+        const data = document.data();
+        const payload = data.payload || '';
+        const parts = payload.split(',');
+        const isDangerPin = parts.length >= 3 && parts[2] === 'ST05';
+        
+        // ST05 (危険箇所・滑落注意) 以外のログのみを削除
+        if (!isDangerPin) {
+          deletePromises.push(deleteDoc(doc(db, 'search_logs', document.id)));
+        }
       });
       await Promise.all(deletePromises);
-      setStatusMessage('生ログ履歴をすべて削除しました');
+      setStatusMessage('生ログ履歴を削除しました (危険箇所ピンは保護されました)');
       setTimeout(() => setStatusMessage(''), 4000);
     } catch (error) {
       console.error("Failed to clear search logs:", error);

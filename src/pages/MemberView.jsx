@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, MapPin, Send, Mail, CheckCircle, AlertTriangle, Moon, RefreshCw, Smartphone, LogOut } from 'lucide-react';
 import OfflineMap from '../components/OfflineMap';
+import { collection, query, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import NotificationManager from '../components/NotificationManager';
 import { useSyncQueue } from '../hooks/useSyncQueue';
 import { addToQueue, getQueue } from '../lib/db';
@@ -42,6 +44,37 @@ export default function MemberView({ onGoBack }) {
   useEffect(() => {
     localStorage.setItem('search_my_reports', JSON.stringify(myReports));
   }, [myReports]);
+
+  const [sharedDangerMarkers, setSharedDangerMarkers] = useState([]); // 他の班からも共有された危険箇所ピン (ST05)
+
+  // 他の班の危険箇所ピンをFirestoreからリアルタイム同期
+  useEffect(() => {
+    const q = query(collection(db, 'search_logs'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const dangerMarkers = [];
+      snapshot.docs.forEach(docSnap => {
+        const data = docSnap.data();
+        if (!data.payload) return;
+        const parts = data.payload.split(',');
+        if (parts.length < 5) return;
+        const [uId, uName, statusCode, latStr, lngStr] = parts;
+        
+        // 危険箇所(ST05)のみを抽出して共有ピンとして表示
+        if (statusCode === 'ST05') {
+          dangerMarkers.push({
+            id: docSnap.id,
+            lat: parseFloat(latStr),
+            lng: parseFloat(lngStr),
+            statusCode,
+            userName: uName
+          });
+        }
+      });
+      setSharedDangerMarkers(dangerMarkers);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // UTF-8のバイト数を計算するヘルパー
   const getByteLength = (str) => {
@@ -182,9 +215,17 @@ export default function MemberView({ onGoBack }) {
     );
   };
 
-  // 自分のプロットマーカーのローカル削除処理
-  const handleDeleteMyReport = (markerId) => {
+  // 自分のプロットマーカーのローカル削除処理 (およびFirestoreからの削除同期)
+  const handleDeleteMyReport = async (markerId) => {
+    // ローカルから即座に削除
     setMyReports(prev => prev.filter(r => r.id !== markerId));
+    
+    // Firestoreからも削除を試行 (他の班員・本部とリアルタイムに同期消去するため)
+    try {
+      await deleteDoc(doc(db, 'search_logs', markerId));
+    } catch (e) {
+      console.warn("Local marker deleted, Firestore doc delete skipped or failed:", e);
+    }
   };
 
   // 巨大報告ボタン押下時の処理
@@ -347,11 +388,21 @@ export default function MemberView({ onGoBack }) {
         )}
 
         {/* タブ2: オフライン地図 */}
-        {activeTab === 'map' && (
-          <div className="w-full h-full">
-            <OfflineMap currentPosition={currentPosition} reportMarkers={myReports} onDeleteMarker={handleDeleteMyReport} />
-          </div>
-        )}
+        {activeTab === 'map' && (() => {
+          // 自分が送信したピンと、Firestoreから同期された危険箇所ピンをマージ
+          const mergedMarkers = [...myReports];
+          sharedDangerMarkers.forEach(shared => {
+            const exists = mergedMarkers.some(m => m.id === shared.id);
+            if (!exists) {
+              mergedMarkers.push(shared);
+            }
+          });
+          return (
+            <div className="w-full h-full">
+              <OfflineMap currentPosition={currentPosition} reportMarkers={mergedMarkers} onDeleteMarker={handleDeleteMyReport} />
+            </div>
+          );
+        })()}
 
         {/* タブ3: 指示・着信履歴 */}
         {activeTab === 'messages' && (
