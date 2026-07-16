@@ -20,10 +20,10 @@ const OMURA_BOUNDS = {
 };
 
 const MARKER_STYLE_MAP = {
-  'ST02': { text: '異状なし', color: 'bg-emerald-600 text-white border-white' },
-  'ST03': { text: '発見', color: 'bg-yellow-400 text-black border-black font-black' },
-  'ST04': { text: '要請', color: 'bg-red-600 text-white border-white animate-pulse' },
-  'ST05': { text: '危険', color: 'bg-purple-600 text-white border-white' }
+  'ST02': { text: '異状なし', color: 'bg-emerald-600 text-white border-white', arrowColor: 'border-t-emerald-600' },
+  'ST03': { text: '発見', color: 'bg-yellow-400 text-black border-black font-black', arrowColor: 'border-t-yellow-400' },
+  'ST04': { text: '要請', color: 'bg-red-600 text-white border-white animate-pulse', arrowColor: 'border-t-red-600' },
+  'ST05': { text: '危険', color: 'bg-purple-600 text-white border-white', arrowColor: 'border-t-purple-600' }
 };
 
 export default function OfflineMap({ currentPosition, memberTracks = [], reportMarkers = [], onDeleteMarker }) {
@@ -202,8 +202,13 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
         const lastPoint = track.points[track.points.length - 1];
         const el = document.createElement('div');
         el.id = markerId;
-        el.className = 'px-3 py-1 bg-red-600 text-white text-[10px] font-black rounded-full border-2 border-white shadow-md transform -translate-y-4';
+        el.className = 'relative px-3 py-1.5 bg-red-600 text-white text-[10px] font-black rounded-xl border-2 border-white shadow-xl transform -translate-y-5 select-none';
         el.innerText = track.userName || '団員';
+
+        // 下向きの逆三角形のしっぽ (▼)
+        const arrow = document.createElement('div');
+        arrow.className = 'absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[7px] border-t-red-600';
+        el.appendChild(arrow);
 
         new maplibregl.Marker({ element: el })
           .setLngLat([lastPoint.lng, lastPoint.lat])
@@ -238,7 +243,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
 
       // マーカー要素を作成
       const el = document.createElement('div');
-      el.className = `px-2 py-1 ${style.color} text-[9px] font-black rounded-lg border shadow-md flex flex-col items-center gap-0.5 transform -translate-y-4 cursor-pointer select-none`;
+      el.className = `relative px-2.5 py-1.5 ${style.color} text-[10px] font-black rounded-xl border shadow-lg flex flex-col items-center gap-0.5 transform -translate-y-5 cursor-pointer select-none`;
       
       const labelSpan = document.createElement('span');
       labelSpan.innerText = style.text;
@@ -250,6 +255,11 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
         nameSpan.innerText = userName;
         el.appendChild(nameSpan);
       }
+
+      // 下向きの逆三角形のしっぽ (▼) の追加
+      const arrow = document.createElement('div');
+      arrow.className = `absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] ${style.arrowColor}`;
+      el.appendChild(arrow);
 
       // 長押し削除トリガー (右クリックまたはロングタップ)
       const handleDeleteTrigger = (e) => {
