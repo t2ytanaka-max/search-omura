@@ -202,7 +202,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
         const lastPoint = track.points[track.points.length - 1];
         const el = document.createElement('div');
         el.id = markerId;
-        el.className = 'relative px-3 py-1.5 bg-red-600 text-white text-[10px] font-black rounded-xl border-2 border-white shadow-xl transform -translate-y-5 select-none';
+        el.className = 'relative px-3 py-1.5 bg-red-600 text-white text-[10px] font-black rounded-xl border-2 border-white shadow-xl transform -translate-y-5 select-none whitespace-nowrap w-max';
         el.innerText = track.userName || '団員';
 
         // 下向きの逆三角形のしっぽ (▼)
@@ -242,8 +242,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
       if (!style) return; // プロット対象外のステータス
 
       // マーカー要素を作成
-      const el = document.createElement('div');
-      el.className = `relative px-2.5 py-1.5 ${style.color} text-[10px] font-black rounded-xl border shadow-lg flex flex-col items-center gap-0.5 transform -translate-y-5 cursor-pointer select-none`;
+      el.className = `relative px-2.5 py-1.5 ${style.color} text-[10px] font-black rounded-xl border shadow-lg flex flex-col items-center gap-0.5 transform -translate-y-5 cursor-pointer select-none whitespace-nowrap w-max`;
       
       const labelSpan = document.createElement('span');
       labelSpan.innerText = style.text;
