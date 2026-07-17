@@ -238,22 +238,22 @@ export default function AdminView({ onGoBack }) {
 
       setLogs(parsedLogs.reverse()); // 画面表示用は最新が上
       
-      // 軌跡および赤い名前ラベルも、現在アクティブな団員（下山開始「ST06」や30分以上通信途絶していない人）のみに絞り込む
+      // 軌跡および赤い名前ラベルも、現在アクティブな団員（下山開始「ST06」や12時間以上通信途絶していない人）のみに絞り込む
       const activeTracks = Object.values(tracksMap).filter(track => {
         const info = latestMembers[track.userId];
         if (!info) return false;
         if (info.statusCode === 'ST06') return false;
-        const isTimeout = (Date.now() - info.lastSync) > 30 * 60 * 1000;
+        const isTimeout = (Date.now() - info.lastSync) > 12 * 60 * 60 * 1000;
         if (isTimeout) return false;
         return true;
       });
 
-      // マーカー (要救助者発見、危険箇所など) も、現在アクティブ（捜索終了 ST06 しておらず、かつ30分以内に通信同期がある）団員の報告のみに絞り込む
+      // マーカー (要救助者発見、危険箇所など) も、現在アクティブ（捜責終了 ST06 しておらず、かつ12時間以内に通信同期がある）団員の報告のみに絞り込む
       const activeUserIds = new Set(
         Object.values(latestMembers)
           .filter(m => {
             if (m.statusCode === 'ST06') return false;
-            const isTimeout = (Date.now() - m.lastSync) > 30 * 60 * 1000;
+            const isTimeout = (Date.now() - m.lastSync) > 12 * 60 * 60 * 1000;
             if (isTimeout) return false;
             return true;
           })
@@ -434,7 +434,7 @@ export default function AdminView({ onGoBack }) {
           onClick={() => setActiveTab('control')}
           className={`flex-1 py-4 text-sm font-black tracking-wider transition-all border-b-2 ${activeTab === 'control' ? 'text-rescue-500 border-rescue-500 bg-gray-950' : 'text-gray-300 border-transparent'}`}
         >
-          団員・指示 ({Object.values(membersInfo).filter(m => m.statusCode !== 'ST06' && (Date.now() - m.lastSync) <= 30 * 60 * 1000).length}名)
+          団員・指示 ({Object.values(membersInfo).filter(m => m.statusCode !== 'ST06' && (Date.now() - m.lastSync) <= 12 * 60 * 60 * 1000).length}名)
         </button>
         <button
           type="button"
@@ -479,7 +479,7 @@ export default function AdminView({ onGoBack }) {
               <Users size={14} /> 捜索中の班(分団)
             </h2>
             <span className="bg-rescue-500 text-white text-xs font-black px-3 py-1 rounded-full shadow-md">
-              {Object.values(membersInfo).filter(m => m.statusCode !== 'ST06' && (Date.now() - m.lastSync) <= 30 * 60 * 1000).length}班
+              {Object.values(membersInfo).filter(m => m.statusCode !== 'ST06' && (Date.now() - m.lastSync) <= 12 * 60 * 60 * 1000).length}班
             </span>
           </div>
 
@@ -487,8 +487,8 @@ export default function AdminView({ onGoBack }) {
             {Object.values(membersInfo).filter(member => {
               // 1. 「下山開始 (ST06)」を押した団員は除外
               if (member.statusCode === 'ST06') return false;
-              // 2. 最終同期から30分以上経過している団員も非アクティブとして除外
-              const isTimeout = (Date.now() - member.lastSync) > 30 * 60 * 1000;
+              // 2. 最終同期から12時間以上経過している団員も非アクティブとして除外
+              const isTimeout = (Date.now() - member.lastSync) > 12 * 60 * 60 * 1000;
               if (isTimeout) return false;
               return true;
             }).length === 0 ? (
@@ -497,7 +497,7 @@ export default function AdminView({ onGoBack }) {
               Object.values(membersInfo)
                 .filter(member => {
                   if (member.statusCode === 'ST06') return false;
-                  return (Date.now() - member.lastSync) <= 30 * 60 * 1000;
+                  return (Date.now() - member.lastSync) <= 12 * 60 * 60 * 1000;
                 })
                 .map(member => {
                   const status = STATUS_MAP[member.statusCode] || { text: '不明', color: 'text-gray-400 bg-gray-500/10' };
@@ -560,7 +560,7 @@ export default function AdminView({ onGoBack }) {
                 {Object.values(membersInfo)
                   .filter(m => {
                     if (m.statusCode === 'ST06') return false;
-                    const isTimeout = (Date.now() - m.lastSync) > 30 * 60 * 1000;
+                    const isTimeout = (Date.now() - m.lastSync) > 12 * 60 * 60 * 1000;
                     if (isTimeout) return false;
                     return true;
                   })
