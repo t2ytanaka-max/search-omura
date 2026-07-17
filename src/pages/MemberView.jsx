@@ -236,13 +236,17 @@ export default function MemberView({ onGoBack }) {
       return;
     }
 
-    // 15分毎自動位置送信タイマーの制御 (タイマー本体はuseEffectで制御します)
+    // 捜索状態の制御、およびローカルマーカーの同期的（即座の）クリア
     if (template.code === 'ST01') {
       if (!isSearching) {
         setIsSearching(true);
       }
+      // 再び活動開始（捜索開始）した際にも、念のため過去の危険ピン以外のローカルログを確実に一掃する
+      setMyReports(prev => prev.filter(r => r.statusCode === 'ST05'));
     } else if (template.code === 'ST06') {
       setIsSearching(false);
+      // 捜索終了ボタンが押された瞬間に、非同期のGPS取得を待たず即座に危険箇所(ST05)以外のピンをクリアする
+      setMyReports(prev => prev.filter(r => r.statusCode === 'ST05'));
     }
 
     // 初回・または通常の個別ステータス送信 (手動タップのため includeMessage=true)
