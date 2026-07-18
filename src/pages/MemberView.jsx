@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, MapPin, Send, Mail, CheckCircle, AlertTriangle, Moon, RefreshCw, Smartphone, LogOut } from 'lucide-react';
 import OfflineMap from '../components/OfflineMap';
-import { collection, query, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, deleteDoc, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import NotificationManager from '../components/NotificationManager';
 import { useSyncQueue } from '../hooks/useSyncQueue';
@@ -228,6 +228,30 @@ export default function MemberView({ onGoBack }) {
     }
   };
 
+  // 捜索終了時に、自分の過去のST02〜ST04の報告ピンをFirestoreから削除する
+  const clearMyPastReportsFromFirestore = async () => {
+    try {
+      const q = query(collection(db, 'search_logs'));
+      const querySnapshot = await getDocs(q);
+      const deletePromises = [];
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (!data.payload) return;
+        const parts = data.payload.split(',');
+        if (parts.length < 3) return;
+        const [uId, , statusCode] = parts;
+        
+        // 自分のIDであり、かつST02, ST03, ST04 のピンであれば削除 (危険箇所 ST05 は保護して残す)
+        if (uId === userId && ['ST02', 'ST03', 'ST04'].includes(statusCode)) {
+          deletePromises.push(deleteDoc(doc(db, 'search_logs', docSnap.id)));
+        }
+      });
+      await Promise.all(deletePromises);
+    } catch (e) {
+      console.error("Failed to clear past reports from Firestore:", e);
+    }
+  };
+
   // 巨大報告ボタン押下時の処理
   const handleReport = (template) => {
     unlockAudio(); // 音声をアンロック
@@ -247,6 +271,7 @@ export default function MemberView({ onGoBack }) {
       setIsSearching(false);
       // 捜索終了ボタンが押された瞬間に、非同期のGPS取得を待たず即座に危険箇所(ST05)以外のピンをクリアする
       setMyReports(prev => prev.filter(r => r.statusCode === 'ST05'));
+      clearMyPastReportsFromFirestore(); // 過去のピン(ST02〜ST04)をFirestoreからも自動一括クリア
     }
 
     // 初回・または通常の個別ステータス送信 (手動タップのため includeMessage=true)

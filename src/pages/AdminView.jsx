@@ -198,7 +198,8 @@ export default function AdminView({ onGoBack }) {
         const [userId, userName, statusCode, latStr, lngStr, tsStr, messageText] = parts;
         const lat = parseFloat(latStr);
         const lng = parseFloat(lngStr);
-        const timestamp = parseInt(tsStr) || Date.now();
+        const serverTs = data.timestamp ? data.timestamp.toDate().getTime() : Date.now();
+        const timestamp = parseInt(tsStr) || serverTs;
         const message = messageText || '';
 
         const logEntry = {
