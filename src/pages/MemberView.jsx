@@ -97,11 +97,13 @@ export default function MemberView({ onGoBack }) {
 
   // 最新メッセージ受信時に即座にモーダルを表示するための監視
   useEffect(() => {
-    const unread = messagesList.find(m => !m.read);
+    if (!isSearching) return; // 捜索終了時はポップアップしない
+    const sessionStartTime = parseInt(localStorage.getItem('search_session_start_time') || '0');
+    const unread = messagesList.find(m => !m.read && m.timestamp >= sessionStartTime);
     if (unread) {
       setActiveAlert(unread);
     }
-  }, [messagesList]);
+  }, [messagesList, isSearching]);
 
   // GPSの常時監視（地図用）
   useEffect(() => {
@@ -266,6 +268,9 @@ export default function MemberView({ onGoBack }) {
       if (!isSearching) {
         setIsSearching(true);
       }
+      // 最新のセッション開始時刻を保存
+      localStorage.setItem('search_session_start_time', Date.now().toString());
+      
       // 再び活動開始（捜索開始）した際にも、念のため過去の危険ピン以外のローカルログを確実に一掃する
       setMyReports(prev => prev.filter(r => r.statusCode === 'ST05'));
     } else if (template.code === 'ST06') {
@@ -440,34 +445,42 @@ export default function MemberView({ onGoBack }) {
         })()}
 
         {/* タブ3: 指示・着信履歴 */}
-        {activeTab === 'messages' && (
-          <div className="h-full p-4 overflow-y-auto space-y-3">
-            <h2 className="text-xs font-black text-gray-500 tracking-wider uppercase mb-2">本部指令履歴</h2>
-            {messagesList.length === 0 ? (
-              <div className="text-center py-12 text-gray-600">
-                <Mail size={36} className="mx-auto mb-2 opacity-35" />
-                <p className="text-xs">受信履歴はありません</p>
-              </div>
-            ) : (
-              messagesList.map((msg) => (
-                <div 
-                  key={msg.id} 
-                  className={`p-4 rounded-xl border flex gap-3 ${msg.read ? 'bg-gray-900/40 border-gray-800/80 text-gray-400' : 'bg-red-950/20 border-red-900/50 text-white'}`}
-                >
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-black">{msg.text}</p>
-                    <p className="text-[9px] font-mono opacity-50">
-                      {new Date(msg.timestamp).toLocaleString()}
-                    </p>
-                  </div>
-                  {!msg.read && (
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 self-center animate-pulse" />
-                  )}
+        {activeTab === 'messages' && (() => {
+          const sessionStartTime = parseInt(localStorage.getItem('search_session_start_time') || '0');
+          // 捜索中であり、かつ最新セッション開始時刻以降のメッセージのみに絞り込む
+          const activeMsgs = isSearching
+            ? messagesList.filter(msg => msg.timestamp >= sessionStartTime)
+            : [];
+
+          return (
+            <div className="h-full p-4 overflow-y-auto space-y-3">
+              <h2 className="text-xs font-black text-gray-500 tracking-wider uppercase mb-2">本部指令履歴</h2>
+              {activeMsgs.length === 0 ? (
+                <div className="text-center py-12 text-gray-600">
+                  <Mail size={36} className="mx-auto mb-2 opacity-35" />
+                  <p className="text-xs">受信履歴はありません</p>
                 </div>
-              ))
-            )}
-          </div>
-        )}
+              ) : (
+                activeMsgs.map((msg) => (
+                  <div 
+                    key={msg.id} 
+                    className={`p-4 rounded-xl border flex gap-3 ${msg.read ? 'bg-gray-900/40 border-gray-800/80 text-gray-400' : 'bg-red-950/20 border-red-900/50 text-white'}`}
+                  >
+                    <div className="flex-1 space-y-1">
+                      <p className="text-sm font-black">{msg.text}</p>
+                      <p className="text-[9px] font-mono opacity-50">
+                        {new Date(msg.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                    {!msg.read && (
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-500 self-center animate-pulse" />
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          );
+        })()}
 
         {/* タブ4: 送信ステータス */}
         {activeTab === 'queue' && (
