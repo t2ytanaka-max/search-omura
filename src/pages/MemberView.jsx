@@ -5,7 +5,7 @@ import { collection, query, onSnapshot, doc, deleteDoc, getDocs } from 'firebase
 import { db } from '../lib/firebase';
 import NotificationManager from '../components/NotificationManager';
 import { useSyncQueue } from '../hooks/useSyncQueue';
-import { addToQueue, getQueue } from '../lib/db';
+import { addToQueue, getQueue, clearMessages } from '../lib/db';
 
 const REPORT_TEMPLATES = [
   { code: 'ST01', text: '捜索開始', color: 'bg-blue-600 active:bg-blue-700' },
@@ -87,6 +87,7 @@ export default function MemberView({ onGoBack }) {
     queueCount,
     messagesList,
     updateQueueCount,
+    loadLocalMessages,
     triggerSync
   } = useSyncQueue(userId, () => {
     // 新着指示があった時のコールバック
@@ -272,6 +273,11 @@ export default function MemberView({ onGoBack }) {
       // 捜索終了ボタンが押された瞬間に、非同期のGPS取得を待たず即座に危険箇所(ST05)以外のピンをクリアする
       setMyReports(prev => prev.filter(r => r.statusCode === 'ST05'));
       clearMyPastReportsFromFirestore(); // 過去のピン(ST02〜ST04)をFirestoreからも自動一括クリア
+      
+      // 指示履歴をIndexedDBから消去して画面表示を更新
+      clearMessages().then(() => {
+        if (loadLocalMessages) loadLocalMessages();
+      }).catch(e => console.warn("Failed to clear messages:", e));
     }
 
     // 初回・または通常の個別ステータス送信 (手動タップのため includeMessage=true)

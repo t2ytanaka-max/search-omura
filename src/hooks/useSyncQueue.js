@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { collection, addDoc, query, onSnapshot, orderBy, limit, serverTimestamp, setDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { getQueue, removeFromQueue, addMessage, getMessages } from '../lib/db';
+import { getQueue, removeFromQueue, addMessage, getMessages, clearOldMessages } from '../lib/db';
 
 export const useSyncQueue = (userId, onNewInstruction) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -36,6 +36,11 @@ export const useSyncQueue = (userId, onNewInstruction) => {
   };
 
   const loadLocalMessages = async () => {
+    try {
+      await clearOldMessages(); // 12時間経過した古い履歴を自動消去
+    } catch (e) {
+      console.warn("Failed to clear old messages:", e);
+    }
     const msgs = await getMessages();
     setMessagesList(msgs);
   };

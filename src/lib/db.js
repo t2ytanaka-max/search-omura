@@ -75,6 +75,27 @@ export const markMessageAsRead = async (id) => {
   await tx.done;
 };
 
+export const clearMessages = async () => {
+  const db = await getDB();
+  return db.clear('messages');
+};
+
+export const clearOldMessages = async (thresholdMs = 12 * 60 * 60 * 1000) => {
+  const db = await getDB();
+  const tx = db.transaction('messages', 'readwrite');
+  const store = tx.objectStore('messages');
+  const msgs = await store.getAll();
+  const now = Date.now();
+  const deletePromises = [];
+  msgs.forEach(msg => {
+    if (now - msg.timestamp > thresholdMs) {
+      deletePromises.push(store.delete(msg.id));
+    }
+  });
+  await Promise.all(deletePromises);
+  await tx.done;
+};
+
 // --- 地図タイルキャッシュ操作 ---
 export const cacheTile = async (tileId, blob) => {
   const db = await getDB();
