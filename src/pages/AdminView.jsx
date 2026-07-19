@@ -214,27 +214,30 @@ export default function AdminView({ onGoBack }) {
         };
         parsedLogs.push(logEntry);
 
-        // 軌跡の追加
-        if (!tracksMap[userId]) {
-          tracksMap[userId] = {
+        // 危険箇所 (ST05) は地図ピン専用の共有マーカーであるため、軌跡線や団員のアクティブ活動ステータス判定からは除外する
+        if (statusCode !== 'ST05') {
+          // 軌跡の追加
+          if (!tracksMap[userId]) {
+            tracksMap[userId] = {
+              userId,
+              userName,
+              points: []
+            };
+          }
+          tracksMap[userId].userName = userName; // 所属変更に追従するため最新の名称で上書き
+          tracksMap[userId].points.push({ lat, lng, timestamp });
+
+          // 最新のステータスと位置情報を上書き保持
+          latestMembers[userId] = {
             userId,
             userName,
-            points: []
+            statusCode,
+            lat,
+            lng,
+            lastSync: timestamp,
+            message
           };
         }
-        tracksMap[userId].userName = userName; // 所属変更に追従するため最新の名称で上書き
-        tracksMap[userId].points.push({ lat, lng, timestamp });
-
-        // 最新のステータスと位置情報を上書き保持
-        latestMembers[userId] = {
-          userId,
-          userName,
-          statusCode,
-          lat,
-          lng,
-          lastSync: timestamp,
-          message
-        };
       });
 
       setLogs(parsedLogs.reverse()); // 画面表示用は最新が上
