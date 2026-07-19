@@ -354,30 +354,34 @@ export default function MemberView({ onGoBack }) {
         {/* 本部への伝達事項 (残り日本語文字数表示＆送信ボタン付き) */}
         <div className="mt-2.5 relative flex items-center gap-2">
           <span className="text-xs text-gray-400 font-bold whitespace-nowrap">伝達事項:</span>
-          <div className="flex-1 flex items-center gap-1.5 bg-gray-950 border border-gray-800 rounded-lg pl-3 pr-2 py-1 focus-within:border-rescue-500">
+          <div className={`flex-1 flex items-center gap-1.5 bg-gray-950 border rounded-lg pl-3 pr-2 py-1 ${isSearching ? 'border-gray-800 focus-within:border-rescue-500' : 'border-gray-900 opacity-60'}`}>
             <input 
               type="text"
               value={messageText}
+              disabled={!isSearching}
               onChange={(e) => {
                 const val = e.target.value;
                 if (getByteLength(val) <= 90) {
                   setMessageText(val);
                 }
               }}
-              placeholder="伝達テキスト (任意)　例:倒木あり通行不可"
-              className="flex-1 text-sm bg-transparent border-none outline-none text-white font-bold"
+              placeholder={isSearching ? "伝達テキスト (任意)　例:倒木あり通行不可" : "捜索開始後に伝達事項を送信できます"}
+              className="flex-1 text-sm bg-transparent border-none outline-none text-white font-bold disabled:cursor-not-allowed disabled:text-gray-650"
             />
-            <span className={`text-[9px] font-mono font-bold shrink-0 ${Math.floor((90 - getByteLength(messageText)) / 3) <= 5 ? 'text-red-500 animate-pulse' : 'text-gray-500'}`}>
-              残り {Math.floor((90 - getByteLength(messageText)) / 3)}文字
-            </span>
+            {isSearching && (
+              <span className={`text-[9px] font-mono font-bold shrink-0 ${Math.floor((90 - getByteLength(messageText)) / 3) <= 5 ? 'text-red-500 animate-pulse' : 'text-gray-500'}`}>
+                残り {Math.floor((90 - getByteLength(messageText)) / 3)}文字
+              </span>
+            )}
             <button
               type="button"
+              disabled={!isSearching || !messageText.trim()}
               onClick={() => {
                 if (!messageText.trim()) return;
-                // 現在捜索中なら ST01、そうでないなら ST02 (異状なし) として送信
-                sendPayload(isSearching ? 'ST01' : 'ST02', true);
+                // 捜索中のみ送信可能（isSearchingは常にtrue）
+                sendPayload('ST01', true);
               }}
-              className="p-1.5 bg-rescue-500 hover:bg-rescue-600 active:scale-95 text-white rounded-md transition-all shadow-md shrink-0 flex items-center justify-center cursor-pointer"
+              className="p-1.5 bg-rescue-500 hover:bg-rescue-600 active:scale-95 text-white rounded-md transition-all shadow-md shrink-0 flex items-center justify-center cursor-pointer disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed disabled:scale-100 disabled:shadow-none"
               title="伝達事項を即時送信"
             >
               <Send size={12} />
