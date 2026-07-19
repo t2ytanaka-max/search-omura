@@ -263,6 +263,12 @@ export default function MemberView({ onGoBack }) {
       return;
     }
 
+    // 捜索開始前または終了後の非アクティブ状態で、各報告ボタン(ST02〜ST05)が押された場合はブロックする
+    if (template.code !== 'ST01' && template.code !== 'ST06' && !isSearching) {
+      alert("捜索開始ボタンを押してから報告してください。");
+      return;
+    }
+
     // 捜索状態の制御、およびローカルマーカーの同期的（即座の）クリア
     if (template.code === 'ST01') {
       if (!isSearching) {
