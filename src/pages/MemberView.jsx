@@ -45,36 +45,111 @@ export default function MemberView({ onGoBack }) {
     localStorage.setItem('search_my_reports', JSON.stringify(myReports));
   }, [myReports]);
 
+  const [memberTracks, setMemberTracks] = useState([]); // 他の班の軌跡データ (ST01〜ST04, ST06)
   const [sharedDangerMarkers, setSharedDangerMarkers] = useState([]); // 他の班からも共有された危険箇所ピン (ST05)
 
-  // 他の班の危険箇所ピンをFirestoreからリアルタイム同期
+  // 他の班の現在位置・軌跡および危険箇所ピンをFirestoreからリアルタイム同期
   useEffect(() => {
     const q = query(collection(db, 'search_logs'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      const parsedLogs = [];
+      const tracksMap = {};
+      const latestMembers = {};
       const dangerMarkers = [];
+
       snapshot.docs.forEach(docSnap => {
         const data = docSnap.data();
         if (!data.payload) return;
         const parts = data.payload.split(',');
         if (parts.length < 5) return;
-        const [uId, uName, statusCode, latStr, lngStr] = parts;
+        const [uId, uName, statusCode, latStr, lngStr, tsStr, messageText] = parts;
         
-        // 危険箇所(ST05)のみを抽出して共有ピンとして表示
-        if (statusCode === 'ST05') {
+        const lat = parseFloat(latStr);
+        const lng = parseFloat(lngStr);
+        const serverTs = data.timestamp ? data.timestamp.toDate().getTime() : Date.now();
+        const timestamp = parseInt(tsStr) || serverTs;
+        const message = messageText || '';
+
+        const logEntry = {
+          id: docSnap.id,
+          userId: uId,
+          userName: uName,
+          statusCode,
+          lat,
+          lng,
+          timestamp,
+          message
+        };
+        parsedLogs.push(logEntry);
+      });
+
+      // タイムスタンプで昇順にソート (時系列順)
+      parsedLogs.sort((a, b) => a.timestamp - b.timestamp);
+
+      // 各ログのパース処理
+      parsedLogs.forEach(log => {
+        // 危険箇所 (ST05) は共有ピンリストへ
+        if (log.statusCode === 'ST05') {
           dangerMarkers.push({
-            id: docSnap.id,
-            lat: parseFloat(latStr),
-            lng: parseFloat(lngStr),
-            statusCode,
-            userName: uName
+            id: log.id,
+            lat: log.lat,
+            lng: log.lng,
+            statusCode: log.statusCode,
+            userName: log.userName
           });
+          return; // 軌跡判定・ステータス判定からは除外
+        }
+
+        // 自分以外の他班の軌跡を追加
+        if (log.userId !== userId) {
+          if (!tracksMap[log.userId]) {
+            tracksMap[log.userId] = {
+              userId: log.userId,
+              userName: log.userName,
+              points: []
+            };
+          }
+          tracksMap[log.userId].userName = log.userName;
+          tracksMap[log.userId].points.push({ lat: log.lat, lng: log.lng, timestamp: log.timestamp });
+        }
+
+        // 最新ステータスの追従
+        latestMembers[log.userId] = {
+          userId: log.userId,
+          userName: log.userName,
+          statusCode: log.statusCode,
+          lastSync: log.timestamp
+        };
+      });
+
+      // 最新の「捜索開始 (ST01)」のタイムスタンプを取得 (過去セッションのゴミデータ混入防止)
+      const userSessionStartTimes = {};
+      parsedLogs.forEach(log => {
+        if (log.statusCode === 'ST01') {
+          userSessionStartTimes[log.userId] = log.timestamp;
         }
       });
+
+      // アクティブな団員 (下山終了 ST06 でなく、かつ12時間以内に同期あり) の軌跡のみに絞り込む
+      const activeTracks = Object.values(tracksMap).filter(track => {
+        const info = latestMembers[track.userId];
+        if (!info) return false;
+        if (info.statusCode === 'ST06') return false;
+        const isTimeout = (Date.now() - info.lastSync) > 12 * 60 * 60 * 1000;
+        if (isTimeout) return false;
+
+        // 過去セッションの古い軌跡点は除外して最新セッション分のみ描画
+        const sessionStartTime = userSessionStartTimes[track.userId] || 0;
+        track.points = track.points.filter(p => p.timestamp >= sessionStartTime);
+        return track.points.length > 0;
+      });
+
       setSharedDangerMarkers(dangerMarkers);
+      setMemberTracks(activeTracks);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [userId]);
 
   // UTF-8のバイト数を計算するヘルパー
   const getByteLength = (str) => {
@@ -449,7 +524,7 @@ export default function MemberView({ onGoBack }) {
           });
           return (
             <div className="w-full h-full">
-              <OfflineMap currentPosition={currentPosition} reportMarkers={mergedMarkers} onDeleteMarker={handleDeleteMyReport} />
+              <OfflineMap currentPosition={currentPosition} memberTracks={memberTracks} reportMarkers={mergedMarkers} onDeleteMarker={handleDeleteMyReport} />
             </div>
           );
         })()}
