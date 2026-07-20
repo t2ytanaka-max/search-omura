@@ -50,7 +50,10 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
   const mapContainer = useRef(null);
   const map = useRef(null);
   const marker = useRef(null);
-  const [cachedCount, setCachedCount] = useState(0);
+  const [cachedCount, setCachedCount] = useState(() => {
+    const saved = localStorage.getItem('search_cached_tile_count');
+    return saved ? parseInt(saved, 10) : 0;
+  });
   const [cachedTilesMap, setCachedTilesMap] = useState(new Map()); // メモリ上のタイルキャッシュ
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
@@ -70,6 +73,9 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
       });
       setCachedTilesMap(tileMap);
       setCachedCount(tileMap.size);
+      
+      // 読み込み時差を解消するため、最新カウントをlocalStorageに即同期
+      localStorage.setItem('search_cached_tile_count', tileMap.size.toString());
     } catch (e) {
       console.error("Failed to load tiles to memory:", e);
     }
@@ -409,6 +415,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
   const handleClearCache = async () => {
     if (window.confirm("保存したオフライン用地図データを全て削除しますか？\n（山に入る前はWi-Fiで再ダウンロードが必要になります）")) {
       await clearTileCache();
+      localStorage.removeItem('search_cached_tile_count');
       await loadTilesToMemory();
       // マップを強制的に再描画させるためにリロードを推奨
       window.location.reload();
