@@ -41,6 +41,11 @@ export default function MemberView({ onGoBack }) {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [myPath, setMyPath] = useState(() => {
+    const saved = localStorage.getItem('search_my_path');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   useEffect(() => {
     localStorage.setItem('search_my_reports', JSON.stringify(myReports));
   }, [myReports]);
@@ -178,23 +183,38 @@ export default function MemberView({ onGoBack }) {
     }
   }, [messagesList, isSearching]);
 
-  // GPSの常時監視（地図用）
+  // GPSの常時監視（地図用＆ローカル軌跡の記録）
   useEffect(() => {
     if (!('geolocation' in navigator)) return;
 
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        setCurrentPosition({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude
-        });
+        const newLat = pos.coords.latitude;
+        const newLng = pos.coords.longitude;
+        setCurrentPosition({ lat: newLat, lng: newLng });
+
+        // 捜索中の場合のみ、自分自身の歩行軌跡 (myPath) に座標を蓄積
+        if (isSearching) {
+          setMyPath(prev => {
+            const newPt = { lat: newLat, lng: newLng, timestamp: Date.now() };
+            // 直前の記録地点と近すぎる場合は精度ブレとしてスキップ (約5m)
+            if (prev.length > 0) {
+              const last = prev[prev.length - 1];
+              const dist = Math.sqrt(Math.pow(last.lat - newLat, 2) + Math.pow(last.lng - newLng, 2));
+              if (dist < 0.00005) return prev;
+            }
+            const updated = [...prev, newPt];
+            localStorage.setItem('search_my_path', JSON.stringify(updated));
+            return updated;
+          });
+        }
       },
       (err) => console.warn("GPS watch error:", err),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, []);
+  }, [isSearching]);
 
   useEffect(() => {
     localStorage.setItem('search_member_name', userName);
@@ -350,12 +370,21 @@ export default function MemberView({ onGoBack }) {
       // 最新のセッション開始時刻を保存
       localStorage.setItem('search_session_start_time', Date.now().toString());
       
+      // ローカル軌跡履歴をリセットして再スタート
+      setMyPath([]);
+      localStorage.removeItem('search_my_path');
+      
       // 再び活動開始（捜索開始）した際にも、念のため過去の危険ピン以外のローカルログを確実に一掃する
       setMyReports(prev => prev.filter(r => r.statusCode === 'ST05'));
     } else if (template.code === 'ST06') {
       setIsSearching(false);
       // 捜索終了ボタンが押された瞬間に、非同期のGPS取得を待たず即座に危険箇所(ST05)以外のピンをクリアする
       setMyReports(prev => prev.filter(r => r.statusCode === 'ST05'));
+      
+      // 自分のローカル軌跡をリセット
+      setMyPath([]);
+      localStorage.removeItem('search_my_path');
+      
       clearMyPastReportsFromFirestore(); // 過去のピン(ST02〜ST04)をFirestoreからも自動一括クリア
       
       // 指示履歴をIndexedDBから消去して画面表示を更新
@@ -520,9 +549,31 @@ export default function MemberView({ onGoBack }) {
               mergedMarkers.push(shared);
             }
           });
+
+          // 他班の軌跡(memberTracks)に、自分自身のローカル歩行軌跡(myPath)を合成
+          const mergedMemberTracks = [...memberTracks];
+          if (isSearching && myPath.length > 0) {
+            const myTrackIndex = mergedMemberTracks.findIndex(t => t.userId === userId);
+            const myTrackData = {
+              userId,
+              userName: userName || '自分',
+              points: myPath
+            };
+            if (myTrackIndex > -1) {
+              mergedMemberTracks[myTrackIndex] = myTrackData;
+            } else {
+              mergedMemberTracks.push(myTrackData);
+            }
+          }
+
           return (
             <div className="w-full h-full">
-              <OfflineMap currentPosition={currentPosition} memberTracks={memberTracks} reportMarkers={mergedMarkers} onDeleteMarker={handleDeleteMyReport} />
+              <OfflineMap 
+                currentPosition={currentPosition} 
+                memberTracks={mergedMemberTracks} 
+                reportMarkers={mergedMarkers} 
+                onDeleteMarker={handleDeleteMyReport} 
+              />
             </div>
           );
         })()}
