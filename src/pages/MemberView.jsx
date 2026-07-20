@@ -100,18 +100,16 @@ export default function MemberView({ onGoBack }) {
           return; // 軌跡判定・ステータス判定からは除外
         }
 
-        // 自分以外の他班の軌跡を追加
-        if (log.userId !== userId) {
-          if (!tracksMap[log.userId]) {
-            tracksMap[log.userId] = {
-              userId: log.userId,
-              userName: log.userName,
-              points: []
-            };
-          }
-          tracksMap[log.userId].userName = log.userName;
-          tracksMap[log.userId].points.push({ lat: log.lat, lng: log.lng, timestamp: log.timestamp });
+        // 軌跡を追加 (自分を含む全員分)
+        if (!tracksMap[log.userId]) {
+          tracksMap[log.userId] = {
+            userId: log.userId,
+            userName: log.userName,
+            points: []
+          };
         }
+        tracksMap[log.userId].userName = log.userName;
+        tracksMap[log.userId].points.push({ lat: log.lat, lng: log.lng, timestamp: log.timestamp });
 
         // 最新ステータスの追従
         latestMembers[log.userId] = {

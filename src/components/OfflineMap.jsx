@@ -19,6 +19,26 @@ const OMURA_BOUNDS = {
   maxLat: 33.05
 };
 
+const getMemberColor = (userIdOrName) => {
+  const colors = [
+    '#EF4444', // 赤
+    '#3B82F6', // 青
+    '#10B981', // エメラルド
+    '#F97316', // オレンジ
+    '#EC4899', // ピンク
+    '#06B6D4', // シアン
+    '#D97706', // 琥珀/アンバー
+    '#8B5CF6'  // パープル
+  ];
+  let hash = 0;
+  const str = userIdOrName || '';
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+};
+
 const MARKER_STYLE_MAP = {
   'ST02': { text: '異状なし', color: 'bg-emerald-600 text-white border-white', arrowColor: 'border-t-emerald-600' },
   'ST03': { text: '発見', color: 'bg-yellow-400 text-black border-black font-black', arrowColor: 'border-t-yellow-400' },
@@ -184,6 +204,8 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
           }
         });
 
+        const memberColor = getMemberColor(track.userId);
+
         map.current.addLayer({
           id: layerId,
           type: 'line',
@@ -193,7 +215,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
             'line-cap': 'round'
           },
           paint: {
-            'line-color': '#ff3b3b',
+            'line-color': memberColor,
             'line-width': 6,
             'line-opacity': 0.8
           }
@@ -206,12 +228,14 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
 
         const el = document.createElement('div');
         el.id = markerId;
-        el.className = 'relative px-3 py-1.5 bg-red-600 text-white text-[10px] font-black rounded-xl border-2 border-white shadow-xl transform -translate-y-5 select-none whitespace-nowrap w-max';
+        el.className = 'relative px-3 py-1.5 text-white text-[10px] font-black rounded-xl border-2 border-white shadow-xl transform -translate-y-5 select-none whitespace-nowrap w-max';
+        el.style.backgroundColor = memberColor;
         el.innerText = track.userName || '団員';
 
         // 下向きの逆三角形のしっぽ (▼)
         const arrow = document.createElement('div');
-        arrow.className = 'absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[7px] border-t-red-600';
+        arrow.className = 'absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[7px]';
+        arrow.style.borderTopColor = memberColor;
         el.appendChild(arrow);
 
         new maplibregl.Marker({ element: el })
