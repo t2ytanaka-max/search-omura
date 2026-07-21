@@ -417,54 +417,43 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
 
     setDownloadProgress({ current: 0, total: tileList.length });
 
-    const limit = 4;
-    let active = 0;
-    let index = 0;
     let completed = 0;
     let failedCount = 0; // 保存失敗カウンター
     let savedTotalCount = 0; // 成功保存カウント
     let firstErrReason = ""; // 最初の失敗理由
 
-    const downloadNext = async () => {
-      if (index >= tileList.length) return;
-      const tile = tileList[index++];
-      active++;
+    // 549枚の全タイルを10枚ずつのバッチに分けて確実に全枚数の完了を同期待機
+    const batchSize = 10;
+    for (let i = 0; i < tileList.length; i += batchSize) {
+      const batch = tileList.slice(i, i + batchSize);
+      await Promise.all(batch.map(async (tile) => {
+        const tileId = `${tile.z}-${tile.x}-${tile.y}`;
+        const url = `https://cyberjapandata.gsi.go.jp/xyz/std/${tile.z}/${tile.x}/${tile.y}.png`;
 
-      const tileId = `${tile.z}-${tile.x}-${tile.y}`;
-      const url = `https://cyberjapandata.gsi.go.jp/xyz/std/${tile.z}/${tile.x}/${tile.y}.png`;
-
-      try {
-        const existing = await getCachedTile(tileId);
-        if (!existing) {
-          const blob = await fetchTileAsBlob(url);
-          if (blob && blob.size > 0) {
-            await cacheTile(tileId, blob);
-            savedTotalCount++;
+        try {
+          const existing = await getCachedTile(tileId);
+          if (!existing) {
+            const blob = await fetchTileAsBlob(url);
+            if (blob && blob.size > 0) {
+              await cacheTile(tileId, blob);
+              savedTotalCount++;
+            } else {
+              failedCount++;
+              if (!firstErrReason) firstErrReason = "画像の取得またはデータ変換に失敗しました。";
+            }
           } else {
-            failedCount++;
-            if (!firstErrReason) firstErrReason = "画像の取得またはデータ変換に失敗しました。";
+            savedTotalCount++; // すでに過去に保存済みの場合も成功枚数として加算
           }
-        } else {
-          savedTotalCount++; // すでに過去に保存済みの場合も成功枚数として加算
+        } catch (e) {
+          console.warn(`Tile download failed for: ${tileId}`, e);
+          failedCount++;
+          if (!firstErrReason) firstErrReason = e.message || String(e);
+        } finally {
+          completed++;
+          setDownloadProgress({ current: completed, total: tileList.length });
         }
-      } catch (e) {
-        console.warn(`Tile download failed for: ${tileId}`, e);
-        failedCount++;
-        if (!firstErrReason) firstErrReason = e.message || String(e);
-      } finally {
-        completed++;
-        active--;
-        setDownloadProgress({ current: completed, total: tileList.length });
-        downloadNext();
-      }
-    };
-
-    const promises = [];
-    for (let i = 0; i < Math.min(limit, tileList.length); i++) {
-      promises.push(downloadNext());
+      }));
     }
-    
-    await Promise.all(promises);
 
     setDownloading(false);
     // メモリ上のキャッシュと件数を最新化
