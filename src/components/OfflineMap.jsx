@@ -346,11 +346,12 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
 
   // 国土地理院マップタイルを確実にBlob化して取得するハイブリッド関数
   const fetchTileAsBlob = async (url) => {
-    // 1. 標準fetch試行
+    // 1. referrerPolicy: 'no-referrer' を指定した標準fetch (国土地理院CORS対応のベストプラクティス)
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { referrerPolicy: 'no-referrer' });
       if (res.ok) {
-        return await res.blob();
+        const blob = await res.blob();
+        if (blob && blob.size > 0) return blob;
       }
     } catch (e) {
       // fetch失敗時はCanvasフォールバックへ移行
@@ -359,7 +360,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
     // 2. HTML5 Canvas 経由での画像描画＆Blobキャプチャ (CORS制限回避)
     return new Promise((resolve) => {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
+      // crossOrigin をあえて指定しないことで、CORS未設定サーバーでも画像をDOMロード可能に
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas');
@@ -421,6 +422,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
     let index = 0;
     let completed = 0;
     let failedCount = 0; // 保存失敗カウンター
+    let savedTotalCount = 0; // 成功保存カウント
     let firstErrReason = ""; // 最初の失敗理由
 
     const downloadNext = async () => {
@@ -437,10 +439,13 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
           const blob = await fetchTileAsBlob(url);
           if (blob && blob.size > 0) {
             await cacheTile(tileId, blob);
+            savedTotalCount++;
           } else {
             failedCount++;
             if (!firstErrReason) firstErrReason = "画像の取得またはデータ変換に失敗しました。";
           }
+        } else {
+          savedTotalCount++; // すでに過去に保存済みの場合も成功枚数として加算
         }
       } catch (e) {
         console.warn(`Tile download failed for: ${tileId}`, e);
@@ -466,9 +471,9 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
     await loadTilesToMemory();
 
     if (failedCount > 0) {
-      alert(`ダウンロード処理は完了しましたが、一部の地図（${failedCount}枚）の保存に失敗しました。\n詳細原因: ${firstErrReason}\n\n端末の空き容量不足やChromeの設定を確認してください。`);
+      alert(`ダウンロード処理は完了しましたが、一部の地図（${failedCount}枚）の保存に失敗しました。\n保存成功: ${savedTotalCount} 枚\n詳細原因: ${firstErrReason}`);
     } else {
-      alert(`ダウンロード完了！\n${completed} 枚の地図タイルをローカルに保存しました。\n多良岳山系全域（大村市・鹿島市・諫早市・嬉野市・太良町）の圏外エリアでもマップを表示可能です。`);
+      alert(`ダウンロード完了！\n${savedTotalCount} 枚の地図タイルをローカルに保存しました。\n多良岳山系全域（大村市・鹿島市・諫早市・嬉野市・太良町）の圏外エリアでもマップを表示可能です。`);
     }
   };
 
