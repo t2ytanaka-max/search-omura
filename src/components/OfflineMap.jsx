@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { Download, Trash2 } from 'lucide-react';
-import { getDB, cacheTile, clearTileCache, getCachedTilesCount } from '../lib/db';
+import { getDB, cacheTile, getCachedTile, clearTileCache, getCachedTilesCount } from '../lib/db';
 
 // 緯度経度からタイル座標への変換
 function lon2tile(lon, zoom) {
