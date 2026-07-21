@@ -83,12 +83,30 @@ export const useSyncQueue = (userId, onNewInstruction) => {
     }
   };
 
-  // 定期的な送信確認 (30秒おき)
+  // 定期的な送信確認 (15秒おき) 及び ネットワーク変化監視
   useEffect(() => {
-    const timer = setInterval(() => {
-      triggerSync();
-    }, 15000);
-    return () => clearInterval(timer);
+    const checkAndSync = () => {
+      getQueue().then(queue => {
+        if (queue.length > 0) {
+          // キューに未送信データがある場合は navigator.onLine の誤判定を無視して強制試行
+          triggerSync(true);
+        } else {
+          triggerSync(false);
+        }
+      }).catch(() => {});
+    };
+
+    // 15秒おきの自動バックグラウンド送信タイマー
+    const timer = setInterval(checkAndSync, 15000);
+
+    // OSやブラウザのオンライン復帰イベント時にも即時送信
+    const handleOnline = () => checkAndSync();
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('online', handleOnline);
+    };
   }, []);
 
   // 3. 本部からのメッセージ指示をリアルタイム監視 (オンライン時のみ)
