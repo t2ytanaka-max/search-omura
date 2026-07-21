@@ -52,15 +52,20 @@ export default function GuideView({ onGoBack }) {
       {/* メインビジュアル */}
       <section className="relative bg-gradient-to-b from-gray-900 via-gray-950 to-gray-950 py-16 px-4 border-b border-gray-900">
         <div className="max-w-3xl mx-auto text-center space-y-5">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rescue-500/10 text-rescue-500 text-xs font-black rounded-full border border-rescue-500/20">
-            <Cpu size={12} /> 次世代山岳救助支援アプリ
-          </span>
+          <div className="flex flex-wrap justify-center items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rescue-500/10 text-rescue-500 text-xs font-black rounded-full border border-rescue-500/20">
+              <Cpu size={12} /> 次世代山岳救助支援アプリ
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-mono font-black rounded-full border border-blue-500/20">
+              v2.0.0 Major Release
+            </span>
+          </div>
           <h2 className="text-3xl md:text-4xl font-black tracking-tight text-white leading-tight">
             Search大村市消防団<br />
-            <span className="text-xl md:text-2xl text-gray-300 font-bold">公式マニュアル ＆ 利用規約</span>
+            <span className="text-xl md:text-2xl text-gray-300 font-bold">公式マニュアル ＆ 技術解説 v2.0.0</span>
           </h2>
           <p className="text-xs md:text-sm text-gray-400 max-w-xl mx-auto leading-relaxed">
-            本アプリは、電波の極めて微弱な日本の山岳エリアにおいて、消防団員の現在地と安全状況を本部にリアルタイムで伝達するために設計された、超軽量・オフライン対応 of 山岳捜索支援システムです。
+            本アプリは、電波の極めて微弱な日本の山岳エリアにおいて、消防団員の現在地と安全状況を本部にリアルタイムで伝達するために設計された、完全オフライン起動・衛星通信連携 of 山岳捜索支援システムです。
           </p>
         </div>
       </section>
@@ -177,11 +182,15 @@ export default function GuideView({ onGoBack }) {
                 </li>
                 <li>
                   <strong className="text-white block mb-0.5">⑤ 捜索の終了</strong>
-                  無事に捜索が完了し、下山準備に移る際は「捜索終了」ボタンをタップします。これによりボタンの点滅が消え、初期の「捜索開始」状態に戻ります。
+                  無事に捜索が完了し、下山準備に移る際は「捜索終了」ボタンをタップします。これによりボタンの点滅が消え、過去の報告ピン（危険箇所を除く）や個人の歩行軌跡、指示履歴が自動クリーンアップされます。
                 </li>
                 <li>
-                  <strong className="text-white block mb-0.5">⑥ オフライン地図の利用</strong>
-                  「地図」タブから事前にオフライン地図をダウンロードしておくと、山中の圏外エリアでも携帯電波を使わずに国土地理院の等高線地形図上に自分の現在地を表示することができます。
+                  <strong className="text-white block mb-0.5">⑥ 多良岳山系全域オフライン地図（549枚）と完全オフライン起動（v2.0.0新機能）</strong>
+                  「地図」タブから「多良岳山系全域を一括保存」ボタンを押すと、**大村市・鹿島市・諫早市・嬉野市・太良町を含む多良岳山系全域（経ヶ岳・多良岳・五家原岳など）の等高線地形図（全549枚 / 約15MB）**がスマホ内にローカル保存されます。本アプリはPWA（サービスワーカー）に対応しているため、**携帯電波が完全に繋がらない山中の圏外エリアであっても、ホーム画面のアイコンからアプリが即座に起動し、等高線マップ上で自分や他班の位置を確認できます。**
+                </li>
+                <li>
+                  <strong className="text-white block mb-0.5">⑦ 班（分団）ごとの動的カラーマップとローカル軌跡描画（v2.0.0新機能）</strong>
+                  地図上では、各班（1班、15分団など）ごとに異なる鮮やかな固有カラー（赤・青・緑・オレンジ・ピンク・水色など）が自動的に割り当てられ、ポインターピン（逆三角形のしっぽ付き）と捜索軌跡ラインが色分けして美しく描画されます。また、オフライン時であっても自分自身の歩行ルートがチームカラーの軌跡線としてリアルタイムに引かれて表示されます。
                 </li>
               </ul>
             </div>
@@ -225,8 +234,8 @@ export default function GuideView({ onGoBack }) {
               団員のスマートフォンで現在地送信を確実に動作させるために、位置情報のアクセス許可を必ず<strong className="text-rescue-500 font-bold">「常に許可」</strong>または「アプリの使用中のみ許可」に設定してください。また、バックグラウンドでのGPS取得を維持するため、捜索中はブラウザを完全に閉じず、バックグラウンドで起動したままにしておいてください。
             </li>
             <li>
-              <strong className="text-white">圏外エリアでの挙動について：</strong>
-              電波の届かない山岳部では、送信ボタンや定期連絡のデータは「未送信キュー」としてスマートフォン内部（IndexedDB）に一時保存されます。これは不具合ではなく仕様です。電波が回復（一瞬でも圏内に入った際）した段階で、内部の再送システムが順番に自動アップロードを行います。
+              <strong className="text-white">圏外エリアおよび衛星通信時の全自動送信（v2.0.0機能）：</strong>
+              電波の届かない山岳部では、送信ボタンや位置情報は「送信保留キュー」として端末内（IndexedDB）に一時保存されます。**衛星通信（Starlink / Direct to Cell等）を捉えた際、または携帯電波が一瞬でも回復した際は、15秒ごとのバックグラウンド自動同期機能により、画面を操作しなくても完全自動で即座にアップロードされます。** また、「送信待ち」タブの「手動再試行」ボタンを押すと、いつでも即座に強制送信を試みることができます。
             </li>
             <li>
               <strong className="text-white">ブラウザの音響ブロック制限：</strong>
@@ -239,7 +248,7 @@ export default function GuideView({ onGoBack }) {
           </ul>
         </section>
 
-        {/* 5. よくある質問 (FAQ) — 既存の良好な記述を完全維持 */}
+        {/* 5. よくある質問 (FAQ) */}
         <section className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800 space-y-6 shadow-xl">
           <h3 className="text-lg font-black text-white flex items-center gap-2">
             <HelpCircle size={20} className="text-rescue-500" /> よくある質問 (FAQ)
@@ -260,9 +269,9 @@ export default function GuideView({ onGoBack }) {
             </div>
 
             <div className="space-y-1 border-t border-gray-850 pt-3">
-              <h4 className="font-black text-white">Q. 地図を事前にダウンロードする方法は？</h4>
+              <h4 className="font-black text-white">Q. 地図を事前にダウンロードする方法とデータ容量は？（v2.0.0更新）</h4>
               <p className="text-gray-400 leading-relaxed">
-                A. 活動団員画面の「地図」タブを開き、電波のあるオンライン環境下で「大村市地図をダウンロード」ボタンを押します。約1〜2分でダウンロードが完了し、以降はオフライン時でも地図が読み込まれるようになります。
+                A. 活動団員画面の「地図」タブを開き、Wi-Fi等のオンライン環境下で「多良岳山系全域を一括保存」ボタンを押します。大村市・鹿島市・諫早市・嬉野市・太良町を含む多良岳山系全域の549枚の等高線マップが約1分で一括ダウンロードされます。容量はスマホ写真数枚分と同等の**わずか約15MB（0.015GB）**ですので、端末容量を一切圧迫しません。
               </p>
             </div>
 
