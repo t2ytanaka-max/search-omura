@@ -396,8 +396,19 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
       try {
         const existing = await getCachedTile(tileId);
         if (!existing) {
-          const response = await fetch(url, { mode: 'cors' });
-          if (response.ok) {
+          let response = null;
+          try {
+            response = await fetch(url, { mode: 'cors' });
+          } catch (e1) {
+            // CORS取得がブラウザセキュリティ制限で失敗した場合、no-cors モードで取得を補完
+            try {
+              response = await fetch(url, { mode: 'no-cors' });
+            } catch (e2) {
+              response = null;
+            }
+          }
+
+          if (response && (response.ok || response.type === 'opaque')) {
             const blob = await response.blob();
             await cacheTile(tileId, blob);
           } else {
