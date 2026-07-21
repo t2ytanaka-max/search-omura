@@ -234,7 +234,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
 
         const el = document.createElement('div');
         el.id = markerId;
-        el.className = 'relative px-3 py-1.5 text-white text-[10px] font-black rounded-xl border-2 border-white shadow-xl transform -translate-y-5 select-none whitespace-nowrap w-max';
+        el.className = 'relative px-3 py-1.5 text-white text-[10px] font-black rounded-xl border-2 border-white shadow-xl select-none whitespace-nowrap w-max';
         el.style.backgroundColor = memberColor;
         el.innerText = track.userName || '団員';
 
@@ -244,7 +244,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
         arrow.style.borderTopColor = memberColor;
         el.appendChild(arrow);
 
-        new maplibregl.Marker({ element: el })
+        new maplibregl.Marker({ element: el, anchor: 'bottom' })
           .setLngLat([lastPoint.lng, lastPoint.lat])
           .addTo(map.current);
       } catch (e) {
@@ -280,7 +280,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
 
       // マーカー要素を作成
       const el = document.createElement('div');
-      el.className = `relative px-2.5 py-1.5 ${style.color} text-[10px] font-black rounded-xl border shadow-lg flex flex-col items-center gap-0.5 transform -translate-y-5 cursor-pointer select-none whitespace-nowrap w-max`;
+      el.className = `relative px-2.5 py-1.5 ${style.color} text-[10px] font-black rounded-xl border shadow-lg flex flex-col items-center gap-0.5 cursor-pointer select-none whitespace-nowrap w-max`;
       
       const labelSpan = document.createElement('span');
       labelSpan.innerText = style.text;
@@ -331,7 +331,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
       el.addEventListener('touchcancel', clearTouchTimer);
 
       try {
-        const m = new maplibregl.Marker({ element: el })
+        const m = new maplibregl.Marker({ element: el, anchor: 'bottom' })
           .setLngLat([lng, lat])
           .addTo(map.current);
         newMarkers.push(m);
