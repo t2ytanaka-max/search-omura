@@ -347,6 +347,18 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
   // 地図の事前ダウンロード (一括キャッシュ)
   const downloadOmuraMap = async () => {
     if (downloading) return;
+
+    // 事前の書き込み診断 (シークレットモードや空き容量チェック)
+    try {
+      const testDb = await getDB();
+      // テスト用のダミーデータを書き込んで即時消去する
+      await testDb.put('tiles', { id: 'write-test-temp', blob: new Blob(['test'], { type: 'text/plain' }) });
+      await testDb.delete('tiles', 'write-test-temp');
+    } catch (e) {
+      alert("【重要：地図保存エラー】\nブラウザの保存領域（IndexedDB）への書き込みに失敗しました。\n\n原因として以下の可能性があります：\n1. Google Chromeの『シークレットモード』を使っている（通常モードで開き直してください）\n2. スマートフォンの空き容量が不足している\n3. ブラウザのストレージアクセス権限が許可されていない");
+      return;
+    }
+
     setDownloading(true);
 
     const zooms = [11, 12, 13, 14];
@@ -371,6 +383,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
     let active = 0;
     let index = 0;
     let completed = 0;
+    let failedCount = 0; // 保存失敗カウンター
 
     const downloadNext = async () => {
       if (index >= tileList.length) return;
@@ -387,10 +400,13 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
           if (response.ok) {
             const blob = await response.blob();
             await cacheTile(tileId, blob);
+          } else {
+            failedCount++;
           }
         }
       } catch (e) {
         console.warn(`Tile download failed for: ${tileId}`, e);
+        failedCount++;
       } finally {
         completed++;
         active--;
@@ -409,7 +425,12 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
     setDownloading(false);
     // メモリ上のキャッシュと件数を最新化
     await loadTilesToMemory();
-    alert(`ダウンロード完了！\n${completed} 枚の地図タイルをローカルに保存しました。圏外でも捜索エリアを表示可能です。`);
+
+    if (failedCount > 0) {
+      alert(`ダウンロード処理は完了しましたが、一部の地図（${failedCount}枚）の保存に失敗しました。\n端末の空き容量が不足しているか、シークレットモード等の制限がかかっている可能性があります。\n設定からChromeのキャッシュクリア等を行ってください。`);
+    } else {
+      alert(`ダウンロード完了！\n${completed} 枚の地図タイルをローカルに保存しました。圏外でも捜索エリアを表示可能です。`);
+    }
   };
 
   const handleClearCache = async () => {
