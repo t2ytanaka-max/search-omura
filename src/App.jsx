@@ -102,7 +102,7 @@ export default function App() {
             本アプリおよび本マニュアルに関する一切の権利（著作権を含む）は、開発者（大村市消防団 田中哲也）に帰属します。無断での複製、転載、再配布を禁じます。
           </div>
           <div className="text-[9px] text-rescue-500 font-mono tracking-widest font-black pt-1">
-            ⛰️ 消防団専用救助支援システム v1.2.0
+            ⛰️ 消防団専用救助支援システム v2.0.0
           </div>
         </div>
       </div>
