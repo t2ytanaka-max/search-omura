@@ -344,6 +344,43 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
 
   }, [reportMarkers, isStyleLoaded]);
 
+  // 国土地理院マップタイルを確実にBlob化して取得するハイブリッド関数
+  const fetchTileAsBlob = async (url) => {
+    // 1. 標準fetch試行
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        return await res.blob();
+      }
+    } catch (e) {
+      // fetch失敗時はCanvasフォールバックへ移行
+    }
+
+    // 2. HTML5 Canvas 経由での画像描画＆Blobキャプチャ (CORS制限回避)
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width || 256;
+          canvas.height = img.height || 256;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob((blob) => {
+            resolve(blob);
+          }, 'image/png');
+        } catch (err) {
+          resolve(null);
+        }
+      };
+      img.onerror = () => {
+        resolve(null);
+      };
+      img.src = url;
+    });
+  };
+
   // 地図の事前ダウンロード (一括キャッシュ)
   const downloadOmuraMap = async () => {
     if (downloading) return;
@@ -384,6 +421,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
     let index = 0;
     let completed = 0;
     let failedCount = 0; // 保存失敗カウンター
+    let firstErrReason = ""; // 最初の失敗理由
 
     const downloadNext = async () => {
       if (index >= tileList.length) return;
@@ -396,28 +434,18 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
       try {
         const existing = await getCachedTile(tileId);
         if (!existing) {
-          let response = null;
-          try {
-            response = await fetch(url, { mode: 'cors' });
-          } catch (e1) {
-            // CORS取得がブラウザセキュリティ制限で失敗した場合、no-cors モードで取得を補完
-            try {
-              response = await fetch(url, { mode: 'no-cors' });
-            } catch (e2) {
-              response = null;
-            }
-          }
-
-          if (response && (response.ok || response.type === 'opaque')) {
-            const blob = await response.blob();
+          const blob = await fetchTileAsBlob(url);
+          if (blob && blob.size > 0) {
             await cacheTile(tileId, blob);
           } else {
             failedCount++;
+            if (!firstErrReason) firstErrReason = "画像の取得またはデータ変換に失敗しました。";
           }
         }
       } catch (e) {
         console.warn(`Tile download failed for: ${tileId}`, e);
         failedCount++;
+        if (!firstErrReason) firstErrReason = e.message || String(e);
       } finally {
         completed++;
         active--;
@@ -438,7 +466,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
     await loadTilesToMemory();
 
     if (failedCount > 0) {
-      alert(`ダウンロード処理は完了しましたが、一部の地図（${failedCount}枚）の保存に失敗しました。\n端末の空き容量が不足しているか、シークレットモード等の制限がかかっている可能性があります。\n設定からChromeのキャッシュクリア等を行ってください。`);
+      alert(`ダウンロード処理は完了しましたが、一部の地図（${failedCount}枚）の保存に失敗しました。\n詳細原因: ${firstErrReason}\n\n端末の空き容量不足やChromeの設定を確認してください。`);
     } else {
       alert(`ダウンロード完了！\n${completed} 枚の地図タイルをローカルに保存しました。\n多良岳山系全域（大村市・鹿島市・諫早市・嬉野市・太良町）の圏外エリアでもマップを表示可能です。`);
     }
