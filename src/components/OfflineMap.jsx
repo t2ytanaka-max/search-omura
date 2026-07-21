@@ -11,12 +11,12 @@ function lat2tile(lat, zoom) {
   return Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom));
 }
 
-// 大村市周辺の基本範囲設定（山岳地帯を含む）
+// 大村市・鹿島市・諫早市・嬉野市・太良町に跨る「多良岳山系全域」の広域範囲設定
 const OMURA_BOUNDS = {
-  minLon: 129.85,
-  maxLon: 130.10,
-  minLat: 32.80,
-  maxLat: 33.05
+  minLon: 129.80, // 西：大村湾・大村市街地
+  maxLon: 130.22, // 東：鹿島市・太良町・有明海沿岸
+  minLat: 32.78,  // 南：諫早市・高来町
+  maxLat: 33.12   // 北：嬉野市・鹿島北部（経ヶ岳北面）
 };
 
 const getMemberColor = (userIdOrName) => {
@@ -429,7 +429,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
     if (failedCount > 0) {
       alert(`ダウンロード処理は完了しましたが、一部の地図（${failedCount}枚）の保存に失敗しました。\n端末の空き容量が不足しているか、シークレットモード等の制限がかかっている可能性があります。\n設定からChromeのキャッシュクリア等を行ってください。`);
     } else {
-      alert(`ダウンロード完了！\n${completed} 枚の地図タイルをローカルに保存しました。圏外でも捜索エリアを表示可能です。`);
+      alert(`ダウンロード完了！\n${completed} 枚の地図タイルをローカルに保存しました。\n多良岳山系全域（大村市・鹿島市・諫早市・嬉野市・太良町）の圏外エリアでもマップを表示可能です。`);
     }
   };
 
@@ -472,7 +472,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
               onClick={downloadOmuraMap}
               className="flex-1 py-2 px-3 bg-rescue-500 hover:bg-rescue-600 active:scale-95 text-white text-[11px] font-black rounded-lg flex items-center justify-center gap-1 transition-all"
             >
-              大村周辺を一括保存
+              多良岳山系全域を一括保存
             </button>
             {cachedCount > 0 && (
               <button
