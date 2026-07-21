@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, MapPin, Send, Mail, CheckCircle, AlertTriangle, Moon, RefreshCw, Smartphone, LogOut } from 'lucide-react';
+import { Play, MapPin, Send, Mail, CheckCircle, AlertTriangle, Moon, RefreshCw, Smartphone, LogOut, Wifi, WifiOff } from 'lucide-react';
 import OfflineMap from '../components/OfflineMap';
 import { collection, query, onSnapshot, doc, deleteDoc, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -162,6 +162,7 @@ export default function MemberView({ onGoBack }) {
   // 1. 同期・キュー監視カスタムフック
   const {
     isOnline,
+    networkStatus,
     queueCount,
     messagesList,
     updateQueueCount,
@@ -434,11 +435,25 @@ export default function MemberView({ onGoBack }) {
           </div>
           
           <div className="flex items-center gap-3">
-            {/* 衛星電波インジケータ */}
-            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black ${isOnline ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' : 'bg-red-950 text-red-400 border border-red-500/30 animate-pulse'}`}>
-              <Smartphone size={10} />
-              {isOnline ? '衛星接続中' : '圏外 (オフライン)'}
-            </div>
+            {/* 通信ステータスインジケータ (オンライン / 衛星接続中 / 圏外) */}
+            {networkStatus === 'online' && (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-blue-950 text-blue-400 border border-blue-500/30">
+                <Wifi size={10} />
+                オンライン
+              </div>
+            )}
+            {networkStatus === 'satellite' && (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-emerald-950 text-emerald-400 border border-emerald-500/30">
+                <Smartphone size={10} />
+                衛星接続中
+              </div>
+            )}
+            {networkStatus === 'offline' && (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-red-950 text-red-400 border border-red-500/30 animate-pulse">
+                <WifiOff size={10} />
+                圏外 (オフライン)
+              </div>
+            )}
             
             {/* 団員ID */}
             <div className="text-[11px] font-mono font-bold px-2 py-1 bg-gray-800 rounded text-gray-300">

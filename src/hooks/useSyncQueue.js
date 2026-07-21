@@ -5,6 +5,10 @@ import { getQueue, removeFromQueue, addMessage, getMessages, clearOldMessages } 
 
 export const useSyncQueue = (userId, onNewInstruction) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  // 3段階通信ステータス: 'online' (モバデータ/Wi-Fi) | 'satellite' (衛星通信のみ) | 'offline' (完全圏外)
+  const [networkStatus, setNetworkStatus] = useState(() => {
+    return navigator.onLine ? 'online' : 'offline';
+  });
   const [queueCount, setQueueCount] = useState(0);
   const [messagesList, setMessagesList] = useState([]);
   const isSyncingRef = useRef(false);
@@ -12,10 +16,14 @@ export const useSyncQueue = (userId, onNewInstruction) => {
   // 1. ネットワーク状況の監視
   useEffect(() => {
     const handleOnline = () => {
+      setNetworkStatus('online');
       setIsOnline(true);
       triggerSync();
     };
-    const handleOffline = () => setIsOnline(false);
+    const handleOffline = () => {
+      setNetworkStatus(prev => (prev === 'satellite' ? 'satellite' : 'offline'));
+      setIsOnline(false);
+    };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -60,7 +68,6 @@ export const useSyncQueue = (userId, onNewInstruction) => {
         const item = queue[0];
         
         // 衛星通信を想定した極小データ送信（CSV 1行テキスト）
-        // ドキュメントIDを自動生成して保存
         await addDoc(collection(db, 'search_logs'), {
           payload: item.data,
           timestamp: serverTimestamp()
@@ -68,7 +75,14 @@ export const useSyncQueue = (userId, onNewInstruction) => {
 
         // 送信成功したらキューから削除
         await removeFromQueue(item.id);
-        setIsOnline(true); // 送信に成功したためオンライン状態に復帰
+        
+        // 送信成功時の状態判定: ブラウザがonLineなら'online'、圏外誤判定なのに送信成功なら'satellite'
+        if (navigator.onLine) {
+          setNetworkStatus('online');
+        } else {
+          setNetworkStatus('satellite');
+        }
+        setIsOnline(true);
         
         // キュー情報を更新して次へ
         queue = await getQueue();
@@ -76,7 +90,8 @@ export const useSyncQueue = (userId, onNewInstruction) => {
       }
     } catch (error) {
       console.warn("Queue sync failed (likely offline or weak signal):", error);
-      setIsOnline(false); // 接続失敗時はオフラインにする
+      setNetworkStatus('offline');
+      setIsOnline(false);
     } finally {
       isSyncingRef.current = false;
       updateQueueCount();
@@ -177,6 +192,7 @@ export const useSyncQueue = (userId, onNewInstruction) => {
 
   return {
     isOnline,
+    networkStatus,
     queueCount,
     messagesList,
     updateQueueCount,
