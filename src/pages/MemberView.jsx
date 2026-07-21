@@ -622,7 +622,7 @@ export default function MemberView({ onGoBack }) {
             <div className="flex justify-between items-center">
               <h2 className="text-xs font-black text-gray-500 tracking-wider uppercase">送信保留データ</h2>
               <button 
-                onClick={triggerSync}
+                onClick={() => triggerSync(true)}
                 className="py-1 px-3 bg-gray-800 hover:bg-gray-700 active:scale-95 text-[10px] font-black rounded transition-all flex items-center gap-1"
               >
                 <RefreshCw size={10} /> 手動再試行

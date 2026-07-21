@@ -45,14 +45,18 @@ export const useSyncQueue = (userId, onNewInstruction) => {
     setMessagesList(msgs);
   };
 
-  // 2. キューの自動送信ロジック
-  const triggerSync = async () => {
-    if (isSyncingRef.current || !navigator.onLine) return;
+  // 2. キューの送信ロジック (force = true の場合は navigator.onLine を無視して強制試行)
+  const triggerSync = async (force = false) => {
+    if (isSyncingRef.current) return;
+    if (!force && !navigator.onLine) return; // 自動同期の際はオンライン判定時のみ稼働
+    
     isSyncingRef.current = true;
 
     try {
       let queue = await getQueue();
-      while (queue.length > 0 && navigator.onLine) {
+      while (queue.length > 0) {
+        if (!force && !navigator.onLine) break;
+
         const item = queue[0];
         
         // 衛星通信を想定した極小データ送信（CSV 1行テキスト）
@@ -64,13 +68,15 @@ export const useSyncQueue = (userId, onNewInstruction) => {
 
         // 送信成功したらキューから削除
         await removeFromQueue(item.id);
+        setIsOnline(true); // 送信に成功したためオンライン状態に復帰
         
         // キュー情報を更新して次へ
         queue = await getQueue();
         setQueueCount(queue.length);
       }
     } catch (error) {
-      console.error("Queue sync error:", error);
+      console.warn("Queue sync failed (likely offline or weak signal):", error);
+      setIsOnline(false); // 接続失敗時はオフラインにする
     } finally {
       isSyncingRef.current = false;
       updateQueueCount();
