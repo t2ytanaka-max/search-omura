@@ -227,8 +227,8 @@ export default function MemberView({ onGoBack }) {
                 }
               }
 
-              // 直前の記録地点と近すぎる場合は精度ブレとしてスキップ (約5m)
-              if (distanceMeters < 5) return prev;
+              // 3. バッテリー最適化: 移動距離10m未満、または経過時間10秒未満の場合は無駄な記録をスキップして省電力化
+              if (distanceMeters < 10 || timeSec < 10) return prev;
             }
             
             const updated = [...prev, newPt];

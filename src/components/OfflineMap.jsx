@@ -157,16 +157,19 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
     }
   }, [cachedTilesMap]); // キャッシュがロードされたら地図を再初期化または追従
 
-  // 自分の現在地マーカー更新＆中心移動
+  // 自分の現在地マーカー更新＆中心移動 (画面オフ時は無駄なイージングアニメーションを行わずバッテリー節約)
   useEffect(() => {
     if (map.current && currentPosition) {
       if (marker.current) {
         marker.current.setLngLat([currentPosition.lng, currentPosition.lat]);
       }
-      map.current.easeTo({
-        center: [currentPosition.lng, currentPosition.lat],
-        duration: 1000
-      });
+      // 画面が非表示(スリープ/ポケット収納中)の場合はアニメーション処理を回避してバッテリー消費を抑制
+      if (!document.hidden) {
+        map.current.easeTo({
+          center: [currentPosition.lng, currentPosition.lat],
+          duration: 1000
+        });
+      }
     }
   }, [currentPosition]);
 
