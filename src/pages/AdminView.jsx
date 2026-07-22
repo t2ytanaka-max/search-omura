@@ -623,18 +623,18 @@ export default function AdminView({ onGoBack }) {
         <OfflineMap memberTracks={memberTracks} reportMarkers={reportMarkers} onDeleteMarker={handleDeleteMarker} />
       </main>
 
-      {/* 受信ログオーバーレイ：モバイルではログタブ選択時にスクロール表示、PCでは右上に絶対配置 */}
-      <div className={`${activeTab === 'logs' ? 'flex' : 'hidden'} md:flex md:absolute md:top-6 md:right-6 md:w-80 w-full bg-gray-900/95 md:bg-gray-900/90 border-2 border-gray-800 rounded-2xl p-4 shadow-2xl z-10 overflow-hidden flex-col transition-all duration-300 ${isLogsMinimized ? 'h-[52px] md:h-[52px] max-h-[52px]' : 'max-h-[350px] h-full md:h-auto'}`}>
+      {/* 受信履歴オーバーレイ：モバイルではログタブ選択時にスクロール表示、PCでは右上に絶対配置 */}
+      <div className={`${activeTab === 'logs' ? 'flex' : 'hidden'} md:flex md:absolute md:top-6 md:right-6 md:w-88 w-full bg-gray-900/95 md:bg-gray-900/95 border-2 border-gray-800 rounded-2xl p-4 shadow-2xl z-10 overflow-hidden flex-col transition-all duration-300 ${isLogsMinimized ? 'h-[52px] md:h-[52px] max-h-[52px]' : 'max-h-[420px] h-full md:h-auto'}`}>
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-sm font-black text-red-500 uppercase tracking-widest flex items-center gap-1.5 shrink-0">
-            <Radio size={14} className="text-red-500 animate-pulse" /> 受信CSV生ログ履歴
+          <h2 className="text-sm font-black text-rescue-500 uppercase tracking-widest flex items-center gap-1.5 shrink-0">
+            <Radio size={14} className="text-rescue-500 animate-pulse" /> 受信履歴
           </h2>
           <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={handleClearSearchLogs}
               className="p-1.5 bg-red-950/40 text-red-400 hover:text-red-300 rounded border border-red-900/50 hover:bg-red-900/20 transition-all cursor-pointer"
-              title="受信生ログを一括削除"
+              title="受信履歴を一括削除"
             >
               <Trash2 size={12} />
             </button>
@@ -642,27 +642,46 @@ export default function AdminView({ onGoBack }) {
               type="button"
               onClick={() => setIsLogsMinimized(!isLogsMinimized)}
               className="p-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded border border-gray-750 hover:border-gray-600 transition-all cursor-pointer flex items-center justify-center"
-              title={isLogsMinimized ? "生ログ履歴を展開" : "生ログ履歴を最小化"}
+              title={isLogsMinimized ? "受信履歴を展開" : "受信履歴を最小化"}
             >
               {isLogsMinimized ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
             </button>
-            <RefreshCw size={12} className="text-gray-400 hover:text-white cursor-pointer ml-1.5" />
           </div>
         </div>
-        <div className={`flex-1 overflow-y-auto space-y-1.5 pr-1 ${isLogsMinimized ? 'hidden' : 'block'}`}>
-          {logs.slice(0, 30).map((log) => (
-            <div key={log.id} className="p-2.5 bg-black/50 rounded-lg border border-gray-800 font-mono text-xs text-yellow-300">
-              <div className="flex justify-between text-[10px] text-gray-200 font-black mb-1 border-b border-gray-900 pb-1">
-                <span>{log.userName} ({log.userId})</span>
-                <span>{new Date(log.timestamp).toLocaleTimeString()}</span>
+
+        <div className={`flex-1 overflow-y-auto space-y-2 pr-1 ${isLogsMinimized ? 'hidden' : 'block'}`}>
+          {logs.slice(0, 50).map((log) => {
+            const status = STATUS_MAP[log.statusCode] || { text: log.statusCode || '報告', color: 'text-gray-300 bg-gray-800 border-gray-700' };
+            return (
+              <div key={log.id} className="p-3 bg-gray-950/90 rounded-xl border border-gray-800 space-y-2 shadow-md select-text">
+                {/* 誰から & いつ */}
+                <div className="flex justify-between items-center border-b border-gray-800/80 pb-1.5">
+                  <span className="text-xs font-black text-white">{log.userName} <span className="text-[10px] text-gray-500 font-mono">({log.userId})</span></span>
+                  <span className="text-[10px] font-mono text-gray-400 font-bold">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                </div>
+                
+                {/* 何の報告か (ステータスバッジ) & 座標 */}
+                <div className="flex items-center justify-between">
+                  <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-lg border ${status.color}`}>
+                    {status.text}
+                  </span>
+                  <span className="text-[10px] font-mono font-bold text-yellow-400">
+                    {log.lat.toFixed(5)}, {log.lng.toFixed(5)}
+                  </span>
+                </div>
+
+                {/* 伝達事項メッセージがある場合 */}
+                {log.message && (
+                  <div className="bg-orange-950/30 border border-orange-900/40 p-2 rounded-lg text-xs">
+                    <span className="text-[9px] font-black text-orange-400 block mb-0.5">伝達事項:</span>
+                    <p className="text-white font-bold leading-tight">{log.message}</p>
+                  </div>
+                )}
               </div>
-              <div className="font-bold tracking-tight">
-                {`${log.userId},${log.userName},${log.statusCode},${log.lat.toFixed(5)},${log.lng.toFixed(5)}${log.message ? `,${log.message}` : ''}`}
-              </div>
-            </div>
-          ))}
+            );
+          })}
           {logs.length === 0 && (
-            <p className="text-center text-gray-500 py-12 text-xs font-black">受信データなし</p>
+            <p className="text-center text-gray-500 py-12 text-xs font-black">受信履歴なし</p>
           )}
         </div>
       </div>
