@@ -338,16 +338,12 @@ export default function MemberView({ onGoBack }) {
     );
   };
 
-  // 自分のプロットマーカーのローカル削除処理 (およびFirestoreからの削除同期)
+  // プロットマーカーの削除処理 (Firestoreから削除して本部および全団員端末とリアルタイム同期)
   const handleDeleteMyReport = async (markerId) => {
-    // ローカルから即座に削除
-    setMyReports(prev => prev.filter(r => r.id !== markerId));
-    
-    // Firestoreからも削除を試行 (他の班員・本部とリアルタイムに同期消去するため)
     try {
       await deleteDoc(doc(db, 'search_logs', markerId));
     } catch (e) {
-      console.warn("Local marker deleted, Firestore doc delete skipped or failed:", e);
+      console.warn("Failed to delete report marker from Firestore:", e);
     }
   };
 
@@ -582,23 +578,6 @@ export default function MemberView({ onGoBack }) {
 
         {/* タブ2: オフライン地図 */}
         {activeTab === 'map' && (() => {
-          // 本部や他端末で削除されたピンを判定するため、Firestore上のアクティブIDセットを作成
-          const firestoreIds = new Set(sharedDangerMarkers.map(s => s.id));
-
-          // 自分が送信したピンのうち、まだ送信待ち(仮ID)のものか、Firestore上に現存するピンのみ残す (本部削除の完全リアルタイム連動)
-          const activeMyReports = myReports.filter(r => {
-            if (r.id.includes('-') && !r.id.startsWith('doc-')) return true; // 一時的なローカル仮ID
-            return firestoreIds.has(r.id);
-          });
-
-          const mergedMarkers = [...activeMyReports];
-          sharedDangerMarkers.forEach(shared => {
-            const exists = mergedMarkers.some(m => m.id === shared.id);
-            if (!exists) {
-              mergedMarkers.push(shared);
-            }
-          });
-
           // 他班の軌跡(memberTracks)に、自分自身のローカル歩行軌跡(myPath)を合成
           const mergedMemberTracks = [...memberTracks];
           if (isSearching && myPath.length > 0) {
@@ -620,7 +599,7 @@ export default function MemberView({ onGoBack }) {
               <OfflineMap 
                 currentPosition={currentPosition} 
                 memberTracks={mergedMemberTracks} 
-                reportMarkers={mergedMarkers} 
+                reportMarkers={sharedDangerMarkers} 
                 onDeleteMarker={handleDeleteMyReport} 
               />
             </div>
