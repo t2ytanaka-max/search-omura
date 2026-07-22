@@ -68,10 +68,18 @@ export const useSyncQueue = (userId, onNewInstruction) => {
         const item = queue[0];
         
         // 衛星通信を想定した極小データ送信（CSV 1行テキスト）
-        await addDoc(collection(db, 'search_logs'), {
-          payload: item.data,
-          timestamp: serverTimestamp()
-        });
+        // 5秒のタイムアウト付きで試行し、オフライン時のFirestoreフリーズを回避
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Firestore write timeout")), 5000)
+        );
+
+        await Promise.race([
+          addDoc(collection(db, 'search_logs'), {
+            payload: item.data,
+            timestamp: serverTimestamp()
+          }),
+          timeoutPromise
+        ]);
 
         // 送信成功したらキューから削除
         await removeFromQueue(item.id);
