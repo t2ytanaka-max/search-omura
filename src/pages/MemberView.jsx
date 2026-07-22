@@ -196,14 +196,41 @@ export default function MemberView({ onGoBack }) {
 
         // 捜索中の場合のみ、自分自身の歩行軌跡 (myPath) に座標を蓄積
         if (isSearching) {
+          // 1. デバイスのGPS速度センサーによるフィルタリング (時速15km以上 = 4.17 m/s以上)
+          const gpsSpeed = pos.coords.speed;
+          if (typeof gpsSpeed === 'number' && gpsSpeed > 4.17) {
+            return; // 車両移動中として軌跡追加をスキップ
+          }
+
           setMyPath(prev => {
             const newPt = { lat: newLat, lng: newLng, timestamp: Date.now() };
-            // 直前の記録地点と近すぎる場合は精度ブレとしてスキップ (約5m)
+            
             if (prev.length > 0) {
               const last = prev[prev.length - 1];
-              const dist = Math.sqrt(Math.pow(last.lat - newLat, 2) + Math.pow(last.lng - newLng, 2));
-              if (dist < 0.00005) return prev;
+              
+              // 2. 座標間距離と時間差から簡易速度を算出してフィルタリング (GPS速度が取得できないデバイス対策)
+              const R = 6371000; // 地球の半径 (m)
+              const dLat = (newLat - last.lat) * Math.PI / 180;
+              const dLon = (newLng - last.lng) * Math.PI / 180;
+              const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                        Math.cos(last.lat * Math.PI / 180) * Math.cos(newLat * Math.PI / 180) *
+                        Math.sin(dLon/2) * Math.sin(dLon/2);
+              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+              const distanceMeters = R * c;
+              
+              const timeSec = (newPt.timestamp - last.timestamp) / 1000;
+              
+              if (timeSec > 0) {
+                const calculatedSpeed = distanceMeters / timeSec; // m/s
+                if (calculatedSpeed > 4.17) {
+                  return prev; // 時速15km以上は車両移動中とみなして軌跡に追加しない
+                }
+              }
+
+              // 直前の記録地点と近すぎる場合は精度ブレとしてスキップ (約5m)
+              if (distanceMeters < 5) return prev;
             }
+            
             const updated = [...prev, newPt];
             localStorage.setItem('search_my_path', JSON.stringify(updated));
             return updated;
