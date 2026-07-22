@@ -93,8 +93,8 @@ export default function MemberView({ onGoBack }) {
 
       // 各ログのパース処理
       parsedLogs.forEach(log => {
-        // 危険箇所 (ST05) は共有ピンリストへ
-        if (log.statusCode === 'ST05') {
+        // 報告ピン (ST02, ST03, ST04, ST05) は共有ピンリストへ追加 (本部での削除にリアルタイム完全連動)
+        if (['ST02', 'ST03', 'ST04', 'ST05'].includes(log.statusCode)) {
           dangerMarkers.push({
             id: log.id,
             lat: log.lat,
@@ -102,7 +102,6 @@ export default function MemberView({ onGoBack }) {
             statusCode: log.statusCode,
             userName: log.userName
           });
-          return; // 軌跡判定・ステータス判定からは除外
         }
 
         // 軌跡を追加 (自分を含む全員分)
@@ -583,8 +582,16 @@ export default function MemberView({ onGoBack }) {
 
         {/* タブ2: オフライン地図 */}
         {activeTab === 'map' && (() => {
-          // 自分が送信したピンと、Firestoreから同期された危険箇所ピンをマージ
-          const mergedMarkers = [...myReports];
+          // 本部や他端末で削除されたピンを判定するため、Firestore上のアクティブIDセットを作成
+          const firestoreIds = new Set(sharedDangerMarkers.map(s => s.id));
+
+          // 自分が送信したピンのうち、まだ送信待ち(仮ID)のものか、Firestore上に現存するピンのみ残す (本部削除の完全リアルタイム連動)
+          const activeMyReports = myReports.filter(r => {
+            if (r.id.includes('-') && !r.id.startsWith('doc-')) return true; // 一時的なローカル仮ID
+            return firestoreIds.has(r.id);
+          });
+
+          const mergedMarkers = [...activeMyReports];
           sharedDangerMarkers.forEach(shared => {
             const exists = mergedMarkers.some(m => m.id === shared.id);
             if (!exists) {
