@@ -10,7 +10,7 @@ const STATUS_MAP = {
   'ST03': { text: '要救助者発見', color: 'text-black bg-yellow-400 border border-yellow-500 font-extrabold' },
   'ST04': { text: '救助要請', color: 'text-white bg-red-600 border border-red-500 animate-pulse font-extrabold shadow-[0_0_10px_rgba(239,68,68,0.5)]' },
   'ST05': { text: '危険箇所', color: 'text-white bg-purple-600 border border-purple-500' },
-  'ST06': { text: '下山開始', color: 'text-white bg-gray-600 border border-gray-500' }
+  'ST06': { text: '捜索終了', color: 'text-white bg-gray-600 border border-gray-500' }
 };
 
 export default function AdminView({ onGoBack }) {
