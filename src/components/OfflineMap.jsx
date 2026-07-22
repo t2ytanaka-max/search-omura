@@ -232,8 +232,10 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
           return; // 位置情報が不正な場合はクラッシュ防止のためピン描画をスキップ
         }
 
+        const markerContainer = document.createElement('div');
+        markerContainer.id = markerId;
+
         const el = document.createElement('div');
-        el.id = markerId;
         el.className = 'relative px-3 py-1.5 text-white text-[10px] font-black rounded-xl border-2 border-white shadow-xl select-none whitespace-nowrap w-max';
         el.style.backgroundColor = memberColor;
         el.innerText = track.userName || '団員';
@@ -244,7 +246,9 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
         arrow.style.borderTopColor = memberColor;
         el.appendChild(arrow);
 
-        new maplibregl.Marker({ element: el, anchor: 'bottom' })
+        markerContainer.appendChild(el);
+
+        new maplibregl.Marker({ element: markerContainer, anchor: 'bottom' })
           .setLngLat([lastPoint.lng, lastPoint.lat])
           .addTo(map.current);
       } catch (e) {
@@ -278,6 +282,9 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
       const style = MARKER_STYLE_MAP[statusCode];
       if (!style) return; // プロット対象外のステータス
 
+      // マーカーの親コンテナを作成
+      const markerContainer = document.createElement('div');
+
       // マーカー要素を作成
       const el = document.createElement('div');
       el.className = `relative px-2.5 py-1.5 ${style.color} text-[10px] font-black rounded-xl border shadow-lg flex flex-col items-center gap-0.5 cursor-pointer select-none whitespace-nowrap w-max`;
@@ -298,6 +305,8 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
       arrow.className = `absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] ${style.arrowColor}`;
       el.appendChild(arrow);
 
+      markerContainer.appendChild(el);
+
       // 長押し削除トリガー (右クリックまたはロングタップ)
       const handleDeleteTrigger = (e) => {
         e.preventDefault();
@@ -309,11 +318,11 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
         }
       };
 
-      el.addEventListener('contextmenu', handleDeleteTrigger);
+      markerContainer.addEventListener('contextmenu', handleDeleteTrigger);
 
       // スマホ用タッチタイマー長押し検知 (700ms)
       let touchTimer = null;
-      el.addEventListener('touchstart', (e) => {
+      markerContainer.addEventListener('touchstart', (e) => {
         touchTimer = setTimeout(() => {
           handleDeleteTrigger(e);
         }, 700);
@@ -326,12 +335,12 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
         }
       };
 
-      el.addEventListener('touchend', clearTouchTimer);
-      el.addEventListener('touchmove', clearTouchTimer);
-      el.addEventListener('touchcancel', clearTouchTimer);
+      markerContainer.addEventListener('touchend', clearTouchTimer);
+      markerContainer.addEventListener('touchmove', clearTouchTimer);
+      markerContainer.addEventListener('touchcancel', clearTouchTimer);
 
       try {
-        const m = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+        const m = new maplibregl.Marker({ element: markerContainer, anchor: 'bottom' })
           .setLngLat([lng, lat])
           .addTo(map.current);
         newMarkers.push(m);
