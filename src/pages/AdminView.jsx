@@ -331,13 +331,13 @@ export default function AdminView({ onGoBack }) {
     }
   };
 
-  // 受信CSV生ログ履歴の一括削除
+  // 受信履歴の一括削除
   const handleClearSearchLogs = async () => {
-    if (!window.confirm("本当に「すべての受信CSV生ログ履歴」を削除しますか？\n※「危険箇所(紫ピン)」は安全共有情報として保護され、地図上に残ります。この操作は取り消せません）")) {
+    if (!window.confirm("本当に「すべての受信履歴」を削除しますか？\n※「危険箇所(紫ピン)」は安全共有情報として保護され、地図上に残ります。この操作は取り消せません）")) {
       return;
     }
     
-    setStatusMessage('生ログ削除中...');
+    setStatusMessage('受信履歴を削除中...');
     try {
       const q = query(collection(db, 'search_logs'));
       const querySnapshot = await getDocs(q);
@@ -354,11 +354,11 @@ export default function AdminView({ onGoBack }) {
         }
       });
       await Promise.all(deletePromises);
-      setStatusMessage('生ログ履歴を削除しました (危険箇所ピンは保護されました)');
+      setStatusMessage('受信履歴を削除しました (危険箇所ピンは保護されました)');
       setTimeout(() => setStatusMessage(''), 4000);
     } catch (error) {
       console.error("Failed to clear search logs:", error);
-      setStatusMessage('生ログの削除に失敗しました。');
+      setStatusMessage('受信履歴の削除に失敗しました。');
     }
   };
 
@@ -445,7 +445,7 @@ export default function AdminView({ onGoBack }) {
           onClick={() => setActiveTab('logs')}
           className={`flex-1 py-4 text-sm font-black tracking-wider transition-all border-b-2 ${activeTab === 'logs' ? 'text-rescue-500 border-rescue-500 bg-gray-950' : 'text-gray-300 border-transparent'}`}
         >
-          生ログ履歴
+          受信履歴
         </button>
       </div>
 
