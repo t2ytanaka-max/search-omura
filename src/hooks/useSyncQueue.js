@@ -55,13 +55,19 @@ export const useSyncQueue = (userId, onNewInstruction) => {
 
   // 2. キューの送信ロジック (force = true の場合は navigator.onLine を無視して強制試行)
   const triggerSync = async (force = false) => {
-    if (isSyncingRef.current) return;
-    if (!force && !navigator.onLine) return; // 自動同期の際はオンライン判定時のみ稼働
+    if (isSyncingRef.current) return { success: false, count: 0, reason: 'already_syncing' };
+    if (!force && !navigator.onLine) return { success: false, count: 0, reason: 'offline_skipped' };
     
     isSyncingRef.current = true;
+    let sentCount = 0;
+    let lastError = null;
 
     try {
       let queue = await getQueue();
+      if (queue.length === 0) {
+        return { success: true, count: 0 };
+      }
+
       while (queue.length > 0) {
         if (!force && !navigator.onLine) break;
 
@@ -70,7 +76,7 @@ export const useSyncQueue = (userId, onNewInstruction) => {
         // 衛星通信を想定した極小データ送信（CSV 1行テキスト）
         // 5秒のタイムアウト付きで試行し、オフライン時のFirestoreフリーズを回避
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Firestore write timeout")), 5000)
+          setTimeout(() => reject(new Error("衛星/通信タイムアウト (5秒経過)")), 5000)
         );
 
         await Promise.race([
@@ -83,6 +89,7 @@ export const useSyncQueue = (userId, onNewInstruction) => {
 
         // 送信成功したらキューから削除
         await removeFromQueue(item.id);
+        sentCount++;
         
         // 送信成功時の状態判定: ブラウザがonLineなら'online'、圏外誤判定なのに送信成功なら'satellite'
         if (navigator.onLine) {
@@ -96,10 +103,13 @@ export const useSyncQueue = (userId, onNewInstruction) => {
         queue = await getQueue();
         setQueueCount(queue.length);
       }
+      return { success: true, count: sentCount };
     } catch (error) {
       console.warn("Queue sync failed (likely offline or weak signal):", error);
+      lastError = error?.message || "通信疎通エラー";
       setNetworkStatus('offline');
       setIsOnline(false);
+      return { success: false, count: sentCount, error: lastError };
     } finally {
       isSyncingRef.current = false;
       updateQueueCount();

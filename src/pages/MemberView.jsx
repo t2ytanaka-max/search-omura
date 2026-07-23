@@ -36,6 +36,7 @@ export default function MemberView({ onGoBack }) {
   const [activeAlert, setActiveAlert] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
   const [messageText, setMessageText] = useState('');
+  const [isRetrying, setIsRetrying] = useState(false);
   const [myReports, setMyReports] = useState(() => {
     const saved = localStorage.getItem('search_my_reports');
     return saved ? JSON.parse(saved) : [];
@@ -347,6 +348,31 @@ export default function MemberView({ onGoBack }) {
     }
   };
 
+  // 手動での再送試行処理 (結果の画面通知付き)
+  const handleManualRetry = async () => {
+    if (isRetrying) return;
+    setIsRetrying(true);
+    showToast("衛星・通信の疎通テスト中...");
+    
+    try {
+      const res = await triggerSync(true);
+      if (res && res.success) {
+        if (res.count > 0) {
+          showToast(`送信成功！(${res.count}件)`);
+        } else {
+          showToast("送信待ちデータはありません。");
+        }
+      } else {
+        const reason = res?.error || "通信疎通なし (タイムアウト)";
+        showToast(`再送未完了: ${reason}`);
+      }
+    } catch (e) {
+      showToast("送信試行完了。データは安全に保護中。");
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
   // 捜索終了時に、自分の過去のST02〜ST04の報告ピンをFirestoreから削除する
   const clearMyPastReportsFromFirestore = async () => {
     try {
@@ -650,10 +676,12 @@ export default function MemberView({ onGoBack }) {
             <div className="flex justify-between items-center">
               <h2 className="text-xs font-black text-gray-500 tracking-wider uppercase">送信保留データ</h2>
               <button 
-                onClick={() => triggerSync(true)}
-                className="py-1 px-3 bg-gray-800 hover:bg-gray-700 active:scale-95 text-[10px] font-black rounded transition-all flex items-center gap-1"
+                onClick={handleManualRetry}
+                disabled={isRetrying}
+                className="py-1.5 px-3 bg-rescue-500 hover:bg-rescue-600 disabled:opacity-50 active:scale-95 text-white text-[10px] font-black rounded-lg transition-all flex items-center gap-1.5 shadow-md"
               >
-                <RefreshCw size={10} /> 手動再試行
+                <RefreshCw size={12} className={isRetrying ? "animate-spin" : ""} />
+                {isRetrying ? "通信試行中..." : "手動再試行"}
               </button>
             </div>
             
@@ -664,10 +692,25 @@ export default function MemberView({ onGoBack }) {
                 <p className="text-[10px] text-gray-500">すべての活動報告が正常に送信されました。</p>
               </div>
             ) : (
-              <div className="bg-yellow-950/20 border border-yellow-900/40 p-6 rounded-2xl text-center space-y-2">
+              <div className="bg-yellow-950/20 border border-yellow-900/40 p-6 rounded-2xl text-center space-y-3">
                 <AlertTriangle size={32} className="text-yellow-500 mx-auto animate-pulse" />
-                <h3 className="text-sm font-black text-yellow-400">{queueCount} 件の送信待ちデータ</h3>
-                <p className="text-[10px] text-gray-500">現在圏外です。衛生通信が接続されると自動で再送されます。</p>
+                <div>
+                  <h3 className="text-sm font-black text-yellow-400">{queueCount} 件の送信待ちデータ</h3>
+                  <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">
+                    端末が完全圏外、または通信の疎通が確認できていません。<br/>
+                    通信が疎通し次第、データは全自動で安全に送信されます。
+                  </p>
+                </div>
+
+                <div className="text-[9px] text-gray-400 bg-gray-900/80 p-3 rounded-xl border border-gray-800 text-left font-medium leading-relaxed space-y-1">
+                  <span className="text-white font-bold block">💡 衛星接続アイコン（アンテナ表示）について:</span>
+                  <p>
+                    スマートフォンの画面上に衛星マークが表示されていても、電波が微弱な場合や緊急通報（SOS）専用接続の場合は、アプリからのデータ通信パケットが届かないことがあります。
+                  </p>
+                  <p className="text-rescue-400 font-bold">
+                    ※通信が通らない間も、入力した報告データはスマホ内に安全に自動保護されており、消えることはありません。
+                  </p>
+                </div>
               </div>
             )}
           </div>
