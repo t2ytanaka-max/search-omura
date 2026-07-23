@@ -53,10 +53,46 @@ export const useSyncQueue = (userId, onNewInstruction) => {
     setMessagesList(msgs);
   };
 
-  // 2. キューの送信ロジック (force = true の場合は navigator.onLine を無視して強制試行)
+  // 2. 衛星通信・実効パケット疎通のアクティブ探知 (Probe)
+  const checkRealConnectivity = async () => {
+    if (navigator.onLine) {
+      setNetworkStatus('online');
+      setIsOnline(true);
+      return true;
+    }
+
+    // navigator.onLine が false (地上波圏外) でも、実際には衛星通信等でデータが通じるか超軽量Probe
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      
+      // 超軽量な無応答ヘルスチェック (HTTP GET No Content)
+      await fetch('https://www.google.com/generate_204', {
+        mode: 'no-cors',
+        cache: 'no-store',
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      // 地上波圏外だが実際にはHTTPパケットが疎通している = 衛星接続中！
+      setNetworkStatus('satellite');
+      setIsOnline(true);
+      return true;
+    } catch (e) {
+      // 実際に通信が応答しない = 完全圏外
+      setNetworkStatus('offline');
+      setIsOnline(false);
+      return false;
+    }
+  };
+
+  // 3. キューの送信ロジック (force = true の場合は navigator.onLine を無視して強制試行)
   const triggerSync = async (force = false) => {
     if (isSyncingRef.current) return { success: false, count: 0, reason: 'already_syncing' };
-    if (!force && !navigator.onLine) return { success: false, count: 0, reason: 'offline_skipped' };
+    
+    // 事前に実効疎通テストを実施してステータスバッジを更新
+    const hasConnectivity = await checkRealConnectivity();
+    if (!force && !hasConnectivity) return { success: false, count: 0, reason: 'offline_skipped' };
     
     isSyncingRef.current = true;
     let sentCount = 0;
@@ -69,8 +105,6 @@ export const useSyncQueue = (userId, onNewInstruction) => {
       }
 
       while (queue.length > 0) {
-        if (!force && !navigator.onLine) break;
-
         const item = queue[0];
         
         // 衛星通信の高レイテンシ(遅延200-800ms)に配慮した8秒タイムアウト付きで試行
@@ -119,25 +153,27 @@ export const useSyncQueue = (userId, onNewInstruction) => {
     }
   };
 
-  // 定期的な送信確認 (キューが存在するときは3秒間隔で全自動高速再送、通常は15秒間隔)
+  // 定期的な送信確認及びネットワーク疎通監視 (地上波圏外時は5秒おきに実効疎通探知)
   useEffect(() => {
     let timerId = null;
 
     const checkAndSync = async () => {
       try {
+        // 実効パケット疎通チェックを実行 (必要に応じてステータスバッジを'satellite'へ昇格)
+        const isConnected = await checkRealConnectivity();
+        
         const queue = await getQueue();
         if (queue.length > 0) {
-          // キューに未送信データがある場合は、手動操作不要で完全自動で強制試行(force = true)
           await triggerSync(true);
-          // 保留データが存在する間は3秒ごとに超高速自動バックグラウンド再試行
           scheduleNextCheck(3000);
         } else {
-          await triggerSync(false);
-          // 通常時は15秒ごとにパッシブ監視
-          scheduleNextCheck(15000);
+          if (isConnected) {
+            await triggerSync(false);
+          }
+          scheduleNextCheck(isConnected ? 15000 : 5000);
         }
       } catch (e) {
-        scheduleNextCheck(15000);
+        scheduleNextCheck(5000);
       }
     };
 
@@ -149,13 +185,17 @@ export const useSyncQueue = (userId, onNewInstruction) => {
     // 初期実行
     checkAndSync();
 
-    // OSやブラウザのオンライン復帰イベント時にも即時送信
+    // OSやブラウザのオンライン/オフライン変化イベント
     const handleOnline = () => checkAndSync();
+    const handleOffline = () => checkAndSync();
+
     window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
       if (timerId) clearTimeout(timerId);
       window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
