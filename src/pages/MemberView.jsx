@@ -695,10 +695,10 @@ export default function MemberView({ onGoBack }) {
               <div className="bg-yellow-950/20 border border-yellow-900/40 p-6 rounded-2xl text-center space-y-3">
                 <AlertTriangle size={32} className="text-yellow-500 mx-auto animate-pulse" />
                 <div>
-                  <h3 className="text-sm font-black text-yellow-400">{queueCount} 件の送信待ちデータ</h3>
+                  <h3 className="text-sm font-black text-yellow-400">{queueCount} 件の送信待ちデータ（全自動再試行中）</h3>
                   <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">
-                    端末が完全圏外、または通信の疎通が確認できていません。<br/>
-                    通信が疎通し次第、データは全自動で安全に送信されます。
+                    バックグラウンドで<strong className="text-emerald-400 font-bold">「3秒間隔」</strong>で全自動再送を行っています。<br/>
+                    手動ボタンを押さずにスマホを保持しているだけで、空が開けて衛星や電波が一瞬通じた瞬間に100%全自動で送信が完了します。
                   </p>
                 </div>
 

@@ -73,10 +73,9 @@ export const useSyncQueue = (userId, onNewInstruction) => {
 
         const item = queue[0];
         
-        // 衛星通信を想定した極小データ送信（CSV 1行テキスト）
-        // 5秒のタイムアウト付きで試行し、オフライン時のFirestoreフリーズを回避
+        // 衛星通信の高レイテンシ(遅延200-800ms)に配慮した8秒タイムアウト付きで試行
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("衛星/通信タイムアウト (5秒経過)")), 5000)
+          setTimeout(() => reject(new Error("衛星/通信応答タイムアウト (8秒経過)")), 8000)
         );
 
         await Promise.race([
@@ -116,28 +115,42 @@ export const useSyncQueue = (userId, onNewInstruction) => {
     }
   };
 
-  // 定期的な送信確認 (15秒おき) 及び ネットワーク変化監視
+  // 定期的な送信確認 (キューが存在するときは3秒間隔で全自動高速再送、通常は15秒間隔)
   useEffect(() => {
-    const checkAndSync = () => {
-      getQueue().then(queue => {
+    let timerId = null;
+
+    const checkAndSync = async () => {
+      try {
+        const queue = await getQueue();
         if (queue.length > 0) {
-          // キューに未送信データがある場合は navigator.onLine の誤判定を無視して強制試行
-          triggerSync(true);
+          // キューに未送信データがある場合は、手動操作不要で完全自動で強制試行(force = true)
+          await triggerSync(true);
+          // 保留データが存在する間は3秒ごとに超高速自動バックグラウンド再試行
+          scheduleNextCheck(3000);
         } else {
-          triggerSync(false);
+          await triggerSync(false);
+          // 通常時は15秒ごとにパッシブ監視
+          scheduleNextCheck(15000);
         }
-      }).catch(() => {});
+      } catch (e) {
+        scheduleNextCheck(15000);
+      }
     };
 
-    // 15秒おきの自動バックグラウンド送信タイマー
-    const timer = setInterval(checkAndSync, 15000);
+    const scheduleNextCheck = (delayMs) => {
+      if (timerId) clearTimeout(timerId);
+      timerId = setTimeout(checkAndSync, delayMs);
+    };
+
+    // 初期実行
+    checkAndSync();
 
     // OSやブラウザのオンライン復帰イベント時にも即時送信
     const handleOnline = () => checkAndSync();
     window.addEventListener('online', handleOnline);
 
     return () => {
-      clearInterval(timer);
+      if (timerId) clearTimeout(timerId);
       window.removeEventListener('online', handleOnline);
     };
   }, []);
