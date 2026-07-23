@@ -74,12 +74,16 @@ export const useSyncQueue = (userId, onNewInstruction) => {
         const item = queue[0];
         
         // 衛星通信の高レイテンシ(遅延200-800ms)に配慮した8秒タイムアウト付きで試行
+        // 重複送信を100%防ぐため、キュー固有ID (item.id) をFirestoreドキュメントIDとして等価処理 (setDoc)
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error("衛星/通信応答タイムアウト (8秒経過)")), 8000)
         );
 
+        // item.idが未定義の場合はフォールバックIDを生成
+        const docId = item.id ? String(item.id) : `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+
         await Promise.race([
-          addDoc(collection(db, 'search_logs'), {
+          setDoc(doc(db, 'search_logs', docId), {
             payload: item.data,
             timestamp: serverTimestamp()
           }),

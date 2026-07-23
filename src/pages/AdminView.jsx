@@ -287,7 +287,18 @@ export default function AdminView({ onGoBack }) {
         return log.timestamp >= sessionStartTime;
       });
 
-      setReportMarkers(activeMarkers);
+      // 同一ユーザー・同一ステータス・近接座標の重複ピンを自動で1つに集約 (通信連投重複の完全排除)
+      const uniqueMarkers = [];
+      const seenKeys = new Set();
+      activeMarkers.forEach(log => {
+        const key = `${log.userId}-${log.statusCode}-${log.lat.toFixed(4)}-${log.lng.toFixed(4)}`;
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          uniqueMarkers.push(log);
+        }
+      });
+
+      setReportMarkers(uniqueMarkers);
       setMemberTracks(activeTracks);
       setMembersInfo(latestMembers);
       
@@ -331,30 +342,22 @@ export default function AdminView({ onGoBack }) {
     }
   };
 
-  // 受信履歴の一括削除
+  // 受信履歴の一括削除 (過去の通信重複で蓄積したピンもまとめて綺麗に整理・全消去)
   const handleClearSearchLogs = async () => {
-    if (!window.confirm("本当に「すべての受信履歴」を削除しますか？\n※「危険箇所(紫ピン)」は安全共有情報として保護され、地図上に残ります。この操作は取り消せません）")) {
+    if (!window.confirm("「すべての受信履歴（重複蓄積したピン含む）」を完全に削除・整理しますか？\n\n※過去のリトライで蓄積した重複ピンも一括で綺麗にクリアされます。")) {
       return;
     }
     
-    setStatusMessage('受信履歴を削除中...');
+    setStatusMessage('受信履歴を削除・クリーンアップ中...');
     try {
       const q = query(collection(db, 'search_logs'));
       const querySnapshot = await getDocs(q);
       const deletePromises = [];
       querySnapshot.forEach((document) => {
-        const data = document.data();
-        const payload = data.payload || '';
-        const parts = payload.split(',');
-        const isDangerPin = parts.length >= 3 && parts[2] === 'ST05';
-        
-        // ST05 (危険箇所・滑落注意) 以外のログのみを削除
-        if (!isDangerPin) {
-          deletePromises.push(deleteDoc(doc(db, 'search_logs', document.id)));
-        }
+        deletePromises.push(deleteDoc(doc(db, 'search_logs', document.id)));
       });
       await Promise.all(deletePromises);
-      setStatusMessage('受信履歴を削除しました (危険箇所ピンは保護されました)');
+      setStatusMessage('受信履歴とピンを完全に一括削除しました。');
       setTimeout(() => setStatusMessage(''), 4000);
     } catch (error) {
       console.error("Failed to clear search logs:", error);
