@@ -53,7 +53,7 @@ export const useSyncQueue = (userId, onNewInstruction) => {
     setMessagesList(msgs);
   };
 
-  // 2. 衛星通信・実効パケット疎通のアクティブ探知 (Probe)
+  // 2. 衛星通信・実効パケット疎通のアクティブ探知 (Carrier Satellite Whitelist Probe)
   const checkRealConnectivity = async () => {
     if (navigator.onLine) {
       setNetworkStatus('online');
@@ -61,12 +61,32 @@ export const useSyncQueue = (userId, onNewInstruction) => {
       return true;
     }
 
-    // navigator.onLine が false (地上波圏外) でも、実際には衛星通信等でデータが通じるか超軽量Probe
+    // 地上波圏外 (navigator.onLine === false) の場合、
+    // キャリアの衛星通信ホワイトリスト通過ドメイン (Google / Maps インフラ) に対する Image Probe で疎通を高速検知
+    try {
+      const probeResult = await new Promise((resolve) => {
+        const img = new Image();
+        const timer = setTimeout(() => resolve(false), 3500);
+        img.onload = () => { clearTimeout(timer); resolve(true); };
+        // キャリアの衛星ゲートウェイを通過してパケットが届いた場合は onerror であってもソケット導通成功！
+        img.onerror = () => { clearTimeout(timer); resolve(true); };
+        img.src = `https://maps.gstatic.com/tactile/location/popup-marker-2x.png?_t=${Date.now()}`;
+      });
+
+      if (probeResult) {
+        setNetworkStatus('satellite');
+        setIsOnline(true);
+        return true;
+      }
+    } catch (e) {
+      // 無視して次のフォールバックへ
+    }
+
+    // HTTP fetch での二重探知フォールバック
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
       
-      // 超軽量な無応答ヘルスチェック (HTTP GET No Content)
       await fetch('https://www.google.com/generate_204', {
         mode: 'no-cors',
         cache: 'no-store',
@@ -74,12 +94,10 @@ export const useSyncQueue = (userId, onNewInstruction) => {
       });
       clearTimeout(timeoutId);
 
-      // 地上波圏外だが実際にはHTTPパケットが疎通している = 衛星接続中！
       setNetworkStatus('satellite');
       setIsOnline(true);
       return true;
     } catch (e) {
-      // 実際に通信が応答しない = 完全圏外
       setNetworkStatus('offline');
       setIsOnline(false);
       return false;
