@@ -304,7 +304,8 @@ export default function MemberView({ onGoBack }) {
         await updateQueueCount();
         showToast("送信キューに保存しました");
         if (['ST02', 'ST03', 'ST04', 'ST05'].includes(statusCode)) {
-          const uniqueId = `${userId}-${Date.now()}`;
+          const reportTime = Date.now();
+          const uniqueId = `doc-${userId}-${reportTime}`;
           setMyReports(prev => [...prev, { id: uniqueId, lat: parseFloat(lat), lng: parseFloat(lng), statusCode, userName }]);
         } else if (statusCode === 'ST06') {
           // 捜索終了時は、各捜索班の安全共通情報である「危険箇所(ST05)」の紫ピンのみを残し、他をクリアする
@@ -319,13 +320,14 @@ export default function MemberView({ onGoBack }) {
         console.warn("Geolocation fallback: saving with last known coordinates", err);
         const lat = currentPosition ? currentPosition.lat.toFixed(5) : "0.00000";
         const lng = currentPosition ? currentPosition.lng.toFixed(5) : "0.00000";
+        const reportTime = Date.now();
         
-        const payload = `${userId},${userName},${statusCode},${lat},${lng},${Date.now()},${cleanMsg}`;
+        const payload = `${userId},${userName},${statusCode},${lat},${lng},${reportTime},${cleanMsg}`;
         await addToQueue(payload);
         await updateQueueCount();
         showToast("GPS取得タイムアウト。一時保存。");
         if (['ST02', 'ST03', 'ST04', 'ST05'].includes(statusCode)) {
-          const uniqueId = `${userId}-${Date.now()}`;
+          const uniqueId = `doc-${userId}-${reportTime}`;
           setMyReports(prev => [...prev, { id: uniqueId, lat: parseFloat(lat), lng: parseFloat(lng), statusCode, userName }]);
         } else if (statusCode === 'ST06') {
           setMyReports(prev => prev.filter(r => r.statusCode === 'ST05'));
@@ -620,12 +622,21 @@ export default function MemberView({ onGoBack }) {
             }
           }
 
+          // 本部共有マーカー (sharedDangerMarkers) と 自分が送信したローカルマーカー (myReports) をマージし、
+          // 応答確認を待つことなく自分の団員スマホ地図上に「発見(黄色)」や「危険(紫)」を即座にピン表示
+          const mergedMarkers = [...myReports];
+          sharedDangerMarkers.forEach(shared => {
+            if (!mergedMarkers.some(m => m.id === shared.id)) {
+              mergedMarkers.push(shared);
+            }
+          });
+
           return (
             <div className="w-full h-full">
               <OfflineMap 
                 currentPosition={currentPosition} 
                 memberTracks={mergedMemberTracks} 
-                reportMarkers={sharedDangerMarkers} 
+                reportMarkers={mergedMarkers} 
                 onDeleteMarker={handleDeleteMyReport} 
               />
             </div>

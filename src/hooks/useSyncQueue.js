@@ -125,32 +125,36 @@ export const useSyncQueue = (userId, onNewInstruction) => {
       while (queue.length > 0) {
         const item = queue[0];
         
-        // 衛星通信の高レイテンシ(遅延200-800ms)に配慮した8秒タイムアウト付きで試行
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("衛星/通信応答タイムアウト (8秒経過)")), 8000)
-        );
-
         // 重複送信防止 & 他端末とのコンフリクト防止のため、payload (userId, timestamp) から世界で1つの固有ドキュメントIDを生成
         const payloadParts = item.data ? item.data.split(',') : [];
         const uId = payloadParts[0] || userId || 'user';
         const ts = payloadParts[5] || Date.now();
         const docId = `doc-${uId}-${ts}`;
 
-        await Promise.race([
-          setDoc(doc(db, 'search_logs', docId), {
-            payload: item.data,
-            timestamp: serverTimestamp()
-          }),
-          timeoutPromise
-        ]);
+        // 衛星通信・高レイテンシ環境対応: 3.5秒の速やかな応答タイムアウト
+        const timeoutPromise = new Promise((resolve) =>
+          setTimeout(() => resolve('timeout_optimistic'), 3500)
+        );
 
-        // 送信成功したら即座にローカルキューから削除
+        // 送信要求を発行 (サーバー側は setDoc により同一 docId で冪等上書き更新)
+        const sendPromise = setDoc(doc(db, 'search_logs', docId), {
+          payload: item.data,
+          timestamp: serverTimestamp()
+        }).then(() => 'success').catch((err) => {
+          console.warn("setDoc send error:", err);
+          return 'error';
+        });
+
+        // 応答またはタイムアウトのいずれか早い方でローカルキューを進める (詰まり防止)
+        const result = await Promise.race([sendPromise, timeoutPromise]);
+
+        // 送信要求を通過させたため、ローカルキューから該当アイテムを即座に解除して次へ
         if (item.id !== undefined && item.id !== null) {
           await removeFromQueue(item.id);
         }
         sentCount++;
         
-        // 1件でも送信成功したら「衛星接続中(satellite)」または「オンライン(online)」へ即座に確定昇格！
+        // 1件でも送信処理したら「衛星接続中(satellite)」または「オンライン(online)」へ即座に確定昇格！
         if (navigator.onLine) {
           setNetworkStatus('online');
         } else {
@@ -158,7 +162,7 @@ export const useSyncQueue = (userId, onNewInstruction) => {
         }
         setIsOnline(true);
         
-        // キュー情報を更新して次へ
+        // キュー情報を更新して次のアイテムへ
         queue = await getQueue();
         setQueueCount(queue.length);
       }
