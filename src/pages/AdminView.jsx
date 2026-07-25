@@ -187,6 +187,22 @@ export default function AdminView({ onGoBack }) {
         });
       }
 
+      // 1. 各ユーザーの最新の「捜索開始 (ST01)」タイムスタンプを事前に算出 (過去セッションの移動線の混入を100%カット)
+      const userSessionStartTimes = {};
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (!data.payload) return;
+        const parts = data.payload.split(',');
+        if (parts.length >= 6) {
+          const uId = parts[0];
+          const stCode = parts[2];
+          const ts = parseInt(parts[5]) || 0;
+          if (stCode === 'ST01') {
+            userSessionStartTimes[uId] = Math.max(userSessionStartTimes[uId] || 0, ts);
+          }
+        }
+      });
+
       snapshot.docs.forEach(doc => {
         const data = doc.data();
         if (!data.payload) return;
@@ -216,16 +232,19 @@ export default function AdminView({ onGoBack }) {
 
         // 危険箇所 (ST05) は地図ピン専用の共有マーカーであるため、軌跡線や団員のアクティブ活動ステータス判定からは除外する
         if (statusCode !== 'ST05') {
-          // 軌跡の追加
-          if (!tracksMap[userId]) {
-            tracksMap[userId] = {
-              userId,
-              userName,
-              points: []
-            };
+          // 最新の捜索開始(ST01)時刻以降のポイントのみを軌跡に追加 (過去の古い遠隔軌跡線の完全カット)
+          const sessionStart = userSessionStartTimes[userId] || 0;
+          if (timestamp >= sessionStart) {
+            if (!tracksMap[userId]) {
+              tracksMap[userId] = {
+                userId,
+                userName,
+                points: []
+              };
+            }
+            tracksMap[userId].userName = userName; // 最新の所属名称で上書き
+            tracksMap[userId].points.push({ lat, lng, timestamp });
           }
-          tracksMap[userId].userName = userName; // 所属変更に追従するため最新の名称で上書き
-          tracksMap[userId].points.push({ lat, lng, timestamp });
 
           // 最新のステータスと位置情報を上書き保持
           latestMembers[userId] = {
@@ -242,7 +261,7 @@ export default function AdminView({ onGoBack }) {
 
       setLogs(parsedLogs.reverse()); // 画面表示用は最新が上
       
-      // 軌跡および赤い名前ラベルも、現在アクティブな団員（下山開始「ST06」や12時間以上通信途絶していない人）のみに絞り込む
+      // 軌跡および名前ラベルも、現在アクティブな団員（下山開始「ST06」や12時間以上通信途絶していない人）のみに絞り込む
       const activeTracks = Object.values(tracksMap).filter(track => {
         const info = latestMembers[track.userId];
         if (!info) return false;
@@ -263,15 +282,6 @@ export default function AdminView({ onGoBack }) {
           })
           .map(m => m.userId)
       );
-
-      // 各ユーザーの最新の「捜索開始 (ST01)」のタイムスタンプを取得 (過去セッションのゴミデータ混入防止)
-      const userSessionStartTimes = {};
-      parsedLogs.forEach(log => {
-        if (log.statusCode === 'ST01') {
-          // parsedLogsは時系列順(昇順)なので、ループの最後が最新の捜索開始時刻になる
-          userSessionStartTimes[log.userId] = log.timestamp;
-        }
-      });
 
       const activeMarkers = parsedLogs.filter(log => {
         const isReportStatus = ['ST02', 'ST03', 'ST04', 'ST05'].includes(log.statusCode);
