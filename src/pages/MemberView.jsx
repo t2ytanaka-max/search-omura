@@ -617,9 +617,18 @@ export default function MemberView({ onGoBack }) {
             }
           }
 
-          // 本部共有マーカー (sharedDangerMarkers) と 自分が送信したローカルマーカー (myReports) をマージし、
-          // 応答確認を待つことなく自分の団員スマホ地図上に「発見(黄色)」や「危険(紫)」を即座にピン表示
-          const mergedMarkers = [...myReports];
+          // 本部で削除されたピンを判定するため、Firestore上のアクティブドキュメントIDセットを作成
+          const firestoreIds = new Set(sharedDangerMarkers.map(s => s.id));
+
+          // 自分が送信したローカルピンのうち、本部で削除されたドキュメントは自動除外 (本部削除の100%リアルタイム連動)
+          const validMyReports = myReports.filter(r => {
+            if (r.id && r.id.startsWith('doc-')) {
+              return firestoreIds.has(r.id);
+            }
+            return true;
+          });
+
+          const mergedMarkers = [...validMyReports];
           sharedDangerMarkers.forEach(shared => {
             if (!mergedMarkers.some(m => m.id === shared.id)) {
               mergedMarkers.push(shared);
