@@ -280,6 +280,8 @@ export default function MemberView({ onGoBack }) {
   };
 
   // 位置情報をFirestore送信（キュー経由）する共通関数
+  const lastValidPosRef = useRef(null);
+
   // 位置情報をFirestore送信（キュー経由）する共通関数
   const sendPayload = (statusCode, includeMessage = false) => {
     if (!('geolocation' in navigator)) {
@@ -287,57 +289,50 @@ export default function MemberView({ onGoBack }) {
       return;
     }
 
-    showToast("GPS取得中...");
+    showToast("GPS取得・送信中...");
 
     // メッセージが有れば改行とカンマを除去、無ければ空文字
     const cleanMsg = includeMessage ? messageText.trim().replace(/,/g, '、').replace(/\n/g, ' ') : '';
 
+    const executeSend = async (lat, lng) => {
+      const reportTime = Date.now();
+      const payload = `${userId},${userName},${statusCode},${lat},${lng},${reportTime},${cleanMsg}`;
+      
+      await addToQueue(payload);
+      await updateQueueCount();
+      showToast("送信キューに保存しました");
+
+      if (['ST02', 'ST03', 'ST04', 'ST05'].includes(statusCode)) {
+        const uniqueId = `doc-${userId}-${reportTime}`;
+        setMyReports(prev => [...prev, { id: uniqueId, lat: parseFloat(lat), lng: parseFloat(lng), statusCode, userName }]);
+      } else if (statusCode === 'ST06') {
+        // 捜索終了時は「危険箇所(ST05)」の紫ピンのみを残し他をクリア
+        setMyReports(prev => prev.filter(r => r.statusCode === 'ST05'));
+      }
+
+      if (includeMessage) {
+        setMessageText(''); // メッセージ欄をクリア
+      }
+      triggerSync(true); // 高速送信トリガー
+    };
+
+    // 高速移動中（車移動等）のGPS取得タイムアウト対策: 応答速度優先で取得
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
+      (pos) => {
         const lat = pos.coords.latitude.toFixed(5);
         const lng = pos.coords.longitude.toFixed(5);
-        
-        // 衛星通信を想定した超軽量CSVテキスト圧縮 (7項目目にメッセージを追加)
-        const payload = `${userId},${userName},${statusCode},${lat},${lng},${Date.now()},${cleanMsg}`;
-        
-        await addToQueue(payload);
-        await updateQueueCount();
-        showToast("送信キューに保存しました");
-        if (['ST02', 'ST03', 'ST04', 'ST05'].includes(statusCode)) {
-          const reportTime = Date.now();
-          const uniqueId = `doc-${userId}-${reportTime}`;
-          setMyReports(prev => [...prev, { id: uniqueId, lat: parseFloat(lat), lng: parseFloat(lng), statusCode, userName }]);
-        } else if (statusCode === 'ST06') {
-          // 捜索終了時は、各捜索班の安全共通情報である「危険箇所(ST05)」の紫ピンのみを残し、他をクリアする
-          setMyReports(prev => prev.filter(r => r.statusCode === 'ST05'));
-        }
-        if (includeMessage) {
-          setMessageText(''); // 送信成功後にメッセージ欄をクリア
-        }
-        triggerSync();
+        lastValidPosRef.current = { lat, lng };
+        executeSend(lat, lng);
       },
-      async (err) => {
-        console.warn("Geolocation fallback: saving with last known coordinates", err);
-        const lat = currentPosition ? currentPosition.lat.toFixed(5) : "0.00000";
-        const lng = currentPosition ? currentPosition.lng.toFixed(5) : "0.00000";
-        const reportTime = Date.now();
-        
-        const payload = `${userId},${userName},${statusCode},${lat},${lng},${reportTime},${cleanMsg}`;
-        await addToQueue(payload);
-        await updateQueueCount();
-        showToast("GPS取得タイムアウト。一時保存。");
-        if (['ST02', 'ST03', 'ST04', 'ST05'].includes(statusCode)) {
-          const uniqueId = `doc-${userId}-${reportTime}`;
-          setMyReports(prev => [...prev, { id: uniqueId, lat: parseFloat(lat), lng: parseFloat(lng), statusCode, userName }]);
-        } else if (statusCode === 'ST06') {
-          setMyReports(prev => prev.filter(r => r.statusCode === 'ST05'));
-        }
-        if (includeMessage) {
-          setMessageText(''); // クリア
-        }
-        triggerSync();
+      (err) => {
+        console.warn("Geolocation fallback for high speed movement:", err);
+        // 現在地、またはバックアップの直前有効位置、またはデフォルト位置を使用
+        const fallbackPos = currentPosition || lastValidPosRef.current;
+        const lat = fallbackPos ? Number(fallbackPos.lat).toFixed(5) : "32.95000";
+        const lng = fallbackPos ? Number(fallbackPos.lng).toFixed(5) : "129.98000";
+        executeSend(lat, lng);
       },
-      { enableHighAccuracy: true, timeout: 6000, maximumAge: 5000 }
+      { enableHighAccuracy: false, timeout: 3000, maximumAge: 10000 }
     );
   };
 
