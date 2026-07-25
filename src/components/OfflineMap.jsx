@@ -119,6 +119,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
               'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'
             ],
             tileSize: 256,
+            maxzoom: 18,
             attribution: '地理院地図'
           }
         },
@@ -128,12 +129,13 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
             type: 'raster',
             source: 'gsi',
             minzoom: 0,
-            maxzoom: 18
+            maxzoom: 19
           }
         ]
       },
       center: initialCenter,
-      zoom: 12,
+      zoom: 13,
+      maxZoom: 19,
       transformRequest: transformRequest
     });
 
@@ -412,14 +414,22 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
 
     setDownloading(true);
 
-    const zooms = [11, 12, 13, 14];
+    const zooms = [11, 12, 13, 14, 15, 16];
     const tileList = [];
 
     zooms.forEach(z => {
-      const xMin = lon2tile(OMURA_BOUNDS.minLon, z);
-      const xMax = lon2tile(OMURA_BOUNDS.maxLon, z);
-      const yMin = lat2tile(OMURA_BOUNDS.maxLat, z);
-      const yMax = lat2tile(OMURA_BOUNDS.minLat, z);
+      // Zoom 15, 16 は山岳捜索の核心エリア(登山道・分岐・尾根・谷筋)に特化して極詳細ダウンロード
+      const bounds = (z >= 15) ? {
+        minLon: 129.90, // 西：郡岳・大村側登山口
+        maxLon: 130.12, // 東：多良岳・有明側登山口
+        minLat: 32.88,  // 南：五家原岳・高来側
+        maxLat: 33.08   // 北：経ヶ岳・鹿島嬉野側
+      } : OMURA_BOUNDS;
+
+      const xMin = lon2tile(bounds.minLon, z);
+      const xMax = lon2tile(bounds.maxLon, z);
+      const yMin = lat2tile(bounds.maxLat, z);
+      const yMax = lat2tile(bounds.minLat, z);
 
       for (let x = xMin; x <= xMax; x++) {
         for (let y = yMin; y <= yMax; y++) {
