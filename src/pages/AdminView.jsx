@@ -297,11 +297,11 @@ export default function AdminView({ onGoBack }) {
         return log.timestamp >= sessionStartTime;
       });
 
-      // 同一ユーザー・同一ステータス・近接座標の重複ピンを自動で1つに集約 (通信連投重複の完全排除)
+      // 同一ドキュメントIDの重複ピンを自動で1つに集約 (通信リトライ重複の完全排除・近接ピンの脱落防止)
       const uniqueMarkers = [];
       const seenKeys = new Set();
       activeMarkers.forEach(log => {
-        const key = `${log.userId}-${log.statusCode}-${log.lat.toFixed(4)}-${log.lng.toFixed(4)}`;
+        const key = log.id || `${log.userId}-${log.statusCode}-${log.timestamp}`;
         if (!seenKeys.has(key)) {
           seenKeys.add(key);
           uniqueMarkers.push(log);
