@@ -239,7 +239,7 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
         markerContainer.id = markerId;
 
         const el = document.createElement('div');
-        el.className = 'relative px-3 py-1.5 text-white text-[10px] font-black rounded-xl border-2 border-white shadow-xl select-none whitespace-nowrap w-max';
+        el.className = 'relative px-3 py-1.5 text-white text-xs sm:text-sm font-black rounded-xl border-2 border-white shadow-xl select-none whitespace-nowrap w-max tracking-tight';
         el.style.backgroundColor = memberColor;
         el.innerText = track.userName || '団員';
 
@@ -288,17 +288,18 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
       // マーカーの親コンテナを作成
       const markerContainer = document.createElement('div');
 
-      // マーカー要素を作成
+      // マーカー要素を作成 (枠サイズはそのまま、文字サイズをtext-xs/text-sm font-blackへ拡大)
       const el = document.createElement('div');
-      el.className = `relative px-2.5 py-1.5 ${style.color} text-[10px] font-black rounded-xl border shadow-lg flex flex-col items-center gap-0.5 cursor-pointer select-none whitespace-nowrap w-max`;
+      el.className = `relative px-2.5 py-1 ${style.color} text-xs sm:text-sm font-black rounded-xl border shadow-lg flex flex-col items-center gap-0 cursor-pointer select-none whitespace-nowrap w-max tracking-tight`;
       
       const labelSpan = document.createElement('span');
+      labelSpan.className = 'font-black leading-tight';
       labelSpan.innerText = style.text;
       el.appendChild(labelSpan);
 
       if (userName) {
         const nameSpan = document.createElement('span');
-        nameSpan.className = 'text-[7px] opacity-75 font-normal scale-90 border-t border-white/20 pt-0.5';
+        nameSpan.className = 'text-[9px] font-bold opacity-90 border-t border-white/20 pt-0.5 mt-0.5 scale-95';
         nameSpan.innerText = userName;
         el.appendChild(nameSpan);
       }
