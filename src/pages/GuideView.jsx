@@ -3,17 +3,13 @@ import {
   Compass, 
   ShieldCheck, 
   Cpu, 
-  WifiOff, 
   ArrowLeft, 
-  Send, 
-  AlertOctagon, 
-  HelpCircle, 
-  Smartphone, 
   MessageCircle, 
   Download, 
   AlertTriangle, 
+  Smartphone, 
   Laptop, 
-  MapPin, 
+  HelpCircle, 
   Sliders
 } from 'lucide-react';
 
@@ -44,179 +40,165 @@ export default function GuideView({ onGoBack }) {
             </div>
           </div>
           <div className="text-[10px] text-gray-400 font-bold bg-gray-950 px-3 py-1 rounded-full border border-gray-800">
-            公式利用者ガイド
+            公式利用者ガイド v2.1.0
           </div>
         </div>
       </header>
 
       {/* メインビジュアル */}
-      <section className="relative bg-gradient-to-b from-gray-900 via-gray-950 to-gray-950 py-16 px-4 border-b border-gray-900">
-        <div className="max-w-3xl mx-auto text-center space-y-5">
+      <section className="relative bg-gradient-to-b from-gray-900 via-gray-950 to-gray-950 py-12 px-4 border-b border-gray-900">
+        <div className="max-w-3xl mx-auto text-center space-y-4">
           <div className="flex flex-wrap justify-center items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rescue-500/10 text-rescue-500 text-xs font-black rounded-full border border-rescue-500/20">
               <Cpu size={12} /> 次世代山岳救助支援アプリ
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-mono font-black rounded-full border border-blue-500/20">
-              v2.0.0 Major Release
+              v2.1.0 Major Update
             </span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-black tracking-tight text-white leading-tight">
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white leading-tight">
             Search大村市消防団<br />
-            <span className="text-xl md:text-2xl text-gray-300 font-bold">公式マニュアル ＆ 技術解説 v2.0.0</span>
+            <span className="text-lg md:text-xl text-gray-300 font-bold">公式マニュアル ＆ 技術解説 v2.1.0</span>
           </h2>
           <p className="text-xs md:text-sm text-gray-400 max-w-xl mx-auto leading-relaxed">
-            本アプリは、電波の極めて微弱な日本の山岳エリアにおいて、消防団員の現在地と安全状況を本部にリアルタイムで伝達するために設計された、完全オフライン起動・衛星通信連携 of 山岳捜索支援システムです。
+            本アプリは、電波の極めて微弱な日本の山岳エリアにおいて、消防団員の現在地と安全状況を本部にリアルタイムで伝達するために設計された、完全オフライン起動・衛星通信連携の山岳捜索支援システムです。
           </p>
         </div>
       </section>
 
       {/* メインコンテンツ */}
-      <main className="max-w-4xl mx-auto py-10 px-4 space-y-12">
+      <main className="max-w-4xl mx-auto py-8 px-4 space-y-10">
         
-        {/* 重要コンセプト（強調事項） */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* 特徴1 */}
-          <div className="bg-gray-900/60 border border-gray-850 p-6 rounded-2xl space-y-4 shadow-xl">
-            <div className="w-12 h-12 bg-blue-600/10 border border-blue-500/20 rounded-xl flex items-center justify-center text-blue-400">
-              <Cpu size={24} />
+        {/* 重要コンセプト */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="bg-gray-900/60 border border-gray-850 p-5 rounded-2xl space-y-3 shadow-xl">
+            <div className="w-10 h-10 bg-blue-600/10 border border-blue-500/20 rounded-xl flex items-center justify-center text-blue-400">
+              <Cpu size={20} />
             </div>
-            <h3 className="text-lg font-black text-white">人工衛星との直接通信を想定</h3>
+            <h3 className="text-base font-black text-white">人工衛星との直接通信（衛星アンテナ対応）</h3>
             <p className="text-xs text-gray-400 leading-relaxed font-medium">
-              スターリンクなどの人工衛星とスマートフォン間の直接通信（Direct to Cell）を考慮し、送受信データをわずか**「数十バイトのCSVテキスト1行」**に極限まで圧縮。画像の送受信などを一切排除し、模擬圏外や微弱な電波環境下でも通信エラーを起こさず確実にデータを届けることが可能です。
+              スターリンク等の人工衛星とスマートフォン間の直接通信（Direct to Cell）に対応。送受信データを「数十バイトの軽量テキスト」に極限まで圧縮し、通信応答を待たずに連続自動送信（楽観的送信）を行うことで、衛星通信下でも途切れることなくデータを届けることが可能です。
             </p>
           </div>
 
-          {/* 特徴2 */}
-          <div className="bg-gray-900/60 border border-gray-850 p-6 rounded-2xl space-y-4 shadow-xl">
-            <div className="w-12 h-12 bg-emerald-600/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400">
-              <ShieldCheck size={24} />
+          <div className="bg-gray-900/60 border border-gray-850 p-5 rounded-2xl space-y-3 shadow-xl">
+            <div className="w-10 h-10 bg-emerald-600/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400">
+              <ShieldCheck size={20} />
             </div>
-            <h3 className="text-lg font-black text-white">個人情報を一切取り扱わない設計</h3>
+            <h3 className="text-base font-black text-white">個人情報を一切取り扱わない設計</h3>
             <p className="text-xs text-gray-400 leading-relaxed font-medium">
-              救助団員のプライバシー保護とセキュリティの観点から、個人名の登録・ログイン情報は不要です。活動時には**「任意の所属名（例：1班、15分団 等）」**と**「自動生成される匿名ランダムID」**のみで識別し、氏名・住所・電話番号などの個人情報はシステム上で一切取り扱いません。
+              救助団員のプライバシー保護とセキュリティの観点から、個人名の登録・ログイン情報は不要です。活動時には「任意の所属名（例：1班、15分団 等）」と「自動生成される匿名ランダムID」のみで識別し、個人情報は一切取り扱いません。
             </p>
           </div>
         </div>
 
-        {/* 1. 本アプリについて（公式LINEアカウント） */}
-        <section className="bg-gray-900/40 p-6 rounded-2xl border border-gray-850 space-y-5 shadow-lg">
-          <h3 className="text-lg font-black text-white border-l-4 border-rescue-500 pl-3 flex items-center gap-2">
-            <MessageCircle size={20} className="text-rescue-500" /> 本アプリについて（公式LINE連携）
+        {/* 1. 公式LINE連携 */}
+        <section className="bg-gray-900/40 p-5 rounded-2xl border border-gray-850 space-y-3 shadow-lg">
+          <h3 className="text-base font-black text-white border-l-4 border-rescue-500 pl-3 flex items-center gap-2">
+            <MessageCircle size={18} className="text-rescue-500" /> 本アプリについて（公式LINE連携）
           </h3>
           <p className="text-xs text-gray-400 leading-relaxed font-medium">
-            本アプリは、大村市消防団のデジタル化推進の一環として開発された専用ツールです。
-            団員専用の**「大村市消防団公式LINEアカウント」**のトークメニュー内に配置されたボタンから、ワンタップで直接本システムにアクセス・起動できるようリンクが用意されています。LINEと併用して活用することで、災害時・捜索活動時にスムーズに起動して迅速に捜索隊形を構築することができます。
+            団員専用の「大村市消防団公式LINEアカウント」のトークメニュー内に配置されたボタンから、ワンタップで直接本システムにアクセス・起動できます。LINEと併用することで、災害時・捜索活動時に迅速に捜索隊形を構築できます。
           </p>
-          <div className="bg-gray-950/50 p-3 rounded-lg border border-gray-850/60 text-[11px] text-gray-400 flex items-start gap-2.5 font-medium leading-normal">
-            <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full mt-1 shrink-0"></div>
-            <div>
-              <span className="text-white font-bold block mb-0.5">公式LINEからの呼び出し手順:</span>
-              LINEの公式消防団アカウントのメニューから「山岳捜索サポーター（本アプリ）」をタップするだけで、IDの新規発行と初期化がバックグラウンドで行われ、即座に活動体制に入ることができます。
-            </div>
-          </div>
         </section>
 
-        {/* 2. スマホのホーム画面に追加する（導入方法） */}
-        <section className="bg-gray-900/40 p-6 rounded-2xl border border-gray-850 space-y-6 shadow-lg">
-          <h3 className="text-lg font-black text-white border-l-4 border-rescue-500 pl-3 flex items-center gap-2">
-            <Download size={20} className="text-rescue-500" /> スマホのホーム画面に追加する（導入手順）
+        {/* 2. ホーム画面への追加手順 */}
+        <section className="bg-gray-900/40 p-5 rounded-2xl border border-gray-850 space-y-4 shadow-lg">
+          <h3 className="text-base font-black text-white border-l-4 border-rescue-500 pl-3 flex items-center gap-2">
+            <Download size={18} className="text-rescue-500" /> スマホのホーム画面に追加する（導入手順）
           </h3>
           <p className="text-xs text-gray-400 leading-relaxed font-medium">
-            本アプリはWebブラウザで動作しますが、スマートフォンのホーム画面に追加することで、一般のネイティブアプリと同様にアイコンから直接起動し、全画面モード（アドレスバーが表示されない状態）で広く快適に使用できるようになります。活動前に必ず追加しておいてください。
+            ホーム画面に追加することで、一般のネイティブアプリと同様にアイコンから直接起動し、全画面で広く使用できます。活動前に必ず追加しておいてください。
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* iOS (Safari) */}
-            <div className="bg-black/40 border border-gray-850 p-4.5 rounded-xl space-y-3">
-              <span className="text-[10px] font-black bg-blue-900/40 text-blue-400 border border-blue-500/20 px-2.5 py-0.5 rounded-full uppercase">iPhone (Safari) の手順</span>
-              <ul className="list-decimal pl-4 text-xs text-gray-400 space-y-2 font-medium leading-relaxed">
-                <li>iPhone標準のブラウザ <strong className="text-white">Safari</strong> で本アプリを開きます。</li>
-                <li>画面下部中央にある <strong className="text-white">共有アイコン（四角から上矢印が飛び出したマーク）</strong> をタップします。</li>
-                <li>表示されたメニューを下にスクロールし、<strong className="text-white">「ホーム画面に追加」</strong> をタップします。</li>
-                <li>右上の「追加」を押すと、ホーム画面に「山岳捜索」のアイコンが登録されます。</li>
+            <div className="bg-black/40 border border-gray-850 p-4 rounded-xl space-y-2">
+              <span className="text-[10px] font-black bg-blue-900/40 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full uppercase">iPhone (Safari) の手順</span>
+              <ul className="list-decimal pl-4 text-xs text-gray-400 space-y-1.5 font-medium leading-relaxed">
+                <li>Safariで本アプリを開きます。</li>
+                <li>下部の <strong className="text-white">共有アイコン（四角から上矢印）</strong> をタップします。</li>
+                <li><strong className="text-white">「ホーム画面に追加」</strong> をタップします。</li>
               </ul>
             </div>
 
-            {/* Android (Chrome) */}
-            <div className="bg-black/40 border border-gray-850 p-4.5 rounded-xl space-y-3">
-              <span className="text-[10px] font-black bg-emerald-900/40 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full uppercase">Android (Chrome) の手順</span>
-              <ul className="list-decimal pl-4 text-xs text-gray-400 space-y-2 font-medium leading-relaxed">
-                <li>Google標準ブラウザ <strong className="text-white">Chrome</strong> で本アプリを開きます。</li>
-                <li>画面右上にある <strong className="text-white">3点リーダー（縦に丸が3つ並んだマーク）</strong> をタップします。</li>
-                <li>メニューから <strong className="text-white">「アプリをインストール」</strong> または <strong className="text-white">「ホーム画面に追加」</strong> をタップします。</li>
-                <li>確認ポップアップが出ますので「インストール（追加）」を選択すると登録されます。</li>
+            <div className="bg-black/40 border border-gray-850 p-4 rounded-xl space-y-2">
+              <span className="text-[10px] font-black bg-emerald-900/40 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase">Android (Chrome) の手順</span>
+              <ul className="list-decimal pl-4 text-xs text-gray-400 space-y-1.5 font-medium leading-relaxed">
+                <li>Chromeで本アプリを開きます。</li>
+                <li>右上の <strong className="text-white">3点リーダー（縦に丸3つ）</strong> をタップします。</li>
+                <li><strong className="text-white">「ホーム画面に追加」</strong> または「アプリをインストール」を選択します。</li>
               </ul>
             </div>
           </div>
         </section>
 
         {/* 3. アプリ操作マニュアル */}
-        <section className="space-y-6">
-          <h3 className="text-lg font-black text-white border-l-4 border-rescue-500 pl-3 flex items-center gap-2">
-            <Sliders size={20} className="text-rescue-500" /> アプリ操作マニュアル
+        <section className="space-y-5">
+          <h3 className="text-base font-black text-white border-l-4 border-rescue-500 pl-3 flex items-center gap-2">
+            <Sliders size={18} className="text-rescue-500" /> アプリ操作マニュアル v2.1.0
           </h3>
 
-          <div className="space-y-6">
+          <div className="space-y-5">
             {/* 3.1 団員用端末の操作手順 */}
-            <div className="bg-gray-900/30 p-6 rounded-2xl border border-gray-850 space-y-4">
+            <div className="bg-gray-900/30 p-5 rounded-2xl border border-gray-850 space-y-3">
               <div className="flex items-center gap-2 border-b border-gray-850 pb-2">
                 <Smartphone size={18} className="text-blue-400" />
                 <h4 className="text-sm font-black text-white">【活動団員用】スマートフォンの操作方法</h4>
               </div>
-              <ul className="list-decimal pl-4.5 text-xs text-gray-400 space-y-3 leading-relaxed font-medium">
+              <ul className="list-decimal pl-4 text-xs text-gray-400 space-y-2.5 leading-relaxed font-medium">
                 <li>
                   <strong className="text-white block mb-0.5">① 所属の記入</strong>
-                  画面最上部の「所属記入」の枠に、所属名（例：15分団、1班 など）を入力します。名前や電話番号などの個人情報は入力不要です。入力内容は次回以降も自動で保存されます。
+                  画面最上部の「所属記入」枠に所属名（例：15分団、1班 など）を入力します。個人情報は入力不要です。
                 </li>
                 <li>
                   <strong className="text-white block mb-0.5">② 捜索の開始と手動現在地報告</strong>
-                  「捜索開始」ボタンをタップします。タップ後、ボタンが青く「現在地報告(ボタンを押して下さい)」と点滅を始めます。捜索中は、この点滅ボタンを定期的にタップして現在地を手動送信してください。自動送信を行わないことでスマートフォンのバッテリー消費を大幅に抑制しています。
+                  「捜索開始」ボタンを押すと、青く「現在地報告」と点滅します。捜索中は定期的にこのボタンをタップして現在地を送信します。
                 </li>
                 <li>
-                  <strong className="text-white block mb-0.5">③ 状況に応じた手動報告</strong>
-                  異状を見つけたり、要救助者を発見したり、自身が危険に遭遇した際は、画面内の該当ボタン（「異状なし」「要救助者発見」「救助要請」など）をいつでもタップして即座に現在位置とステータスを本部に報告可能です。なお、**「危険箇所（紫）」は他すべての捜索班のスマホ地図にもリアルタイムで共有表示されます。** 誤って打ったピンは地図上で**長押し（ロングタップ）**することで削除できます。
+                  <strong className="text-white block mb-0.5">③ 状況に応じた手動報告とローカル即時プロット（v2.1.0新機能）</strong>
+                  「異状なし」「要救助者発見」「救助要請」「危険箇所」などの報告ボタンを押した瞬間、**通信の応答確認を待つことなく、自分のスマホ地図上に即座にカラーピンがプロット表示**されます。車移動中（時速40km等）であっても、直前有効位置バックアップにより不発ゼロで100%確実に送信されます。
                 </li>
                 <li>
                   <strong className="text-white block mb-0.5">④ 伝達事項(テキスト)の送信</strong>
-                  「伝達事項」テキストエリアにメッセージ（例: 倒木あり通行不可）を全角最大30文字以内で入力し、右側の「紙飛行機（送信）」ボタンを押すことで、現在のステータスを維持したまま文字情報を本部に即時送信できます。
+                  メッセージ（例: 倒木あり通行不可）を最大30文字以内で入力し、送信ボタンを押すことで本部に文字情報を即時送信できます。
                 </li>
                 <li>
                   <strong className="text-white block mb-0.5">⑤ 捜索の終了</strong>
-                  無事に捜索が完了し、下山準備に移る際は「捜索終了」ボタンをタップします。これによりボタンの点滅が消え、過去の報告ピン（危険箇所を除く）や個人の歩行軌跡、指示履歴が自動クリーンアップされます。
+                  捜索完了時は「捜索終了」ボタンをタップします。ボタンの点滅が消え、過去の報告ピンや軌跡がクリーンアップされます。
                 </li>
                 <li>
-                  <strong className="text-white block mb-0.5">⑥ 多良岳山系全域オフライン地図（549枚）と完全オフライン起動（v2.0.0新機能）</strong>
-                  「地図」タブから「多良岳山系全域を一括保存」ボタンを押すと、**大村市・鹿島市・諫早市・嬉野市・太良町を含む多良岳山系全域（経ヶ岳・多良岳・五家原岳など）の等高線地形図（全549枚 / 約15MB）**がスマホ内にローカル保存されます。本アプリはPWA（サービスワーカー）に対応しているため、**携帯電波が完全に繋がらない山中の圏外エリアであっても、ホーム画面のアイコンからアプリが即座に起動し、等高線マップ上で自分や他班の位置を確認できます。**
+                  <strong className="text-white block mb-0.5">⑥ 多良岳山系全域・最詳細オフライン拡大地図（全2,000〜2,700枚 / 容量25MB）（v2.1.0大進化）</strong>
+                  「地図」タブから「多良岳山系全域を一括保存」を押すと、**多良岳山系全域の最新地形図に加え、山岳核心部の最詳細拡大地図（ズームレベル15・16、縮尺1/6,250極詳細図）が一括ダウンロード**されます。山中の圏外エリアで地図を大きく拡大（ピンチアウト）しても、等高線・登山道の分岐・尾根・谷筋がハッキリと拡大表示されます。
                 </li>
                 <li>
-                  <strong className="text-white block mb-0.5">⑦ 班（分団）ごとの動的カラーマップとローカル軌跡描画（v2.0.0新機能）</strong>
-                  地図上では、各班（1班、15分団など）ごとに異なる鮮やかな固有カラー（赤・青・緑・オレンジ・ピンク・水色など）が自動的に割り当てられ、ポインターピン（逆三角形のしっぽ付き）と捜索軌跡ラインが色分けして美しく描画されます。また、オフライン時であっても自分自身の歩行ルートがチームカラーの軌跡線としてリアルタイムに引かれて表示されます。
+                  <strong className="text-white block mb-0.5">⑦ 班ごとのカラーマップと見やすい文字拡大（ユニバーサルデザイン）</strong>
+                  各班（1班、15分団など）ごとに異なる固有カラー（赤・青・緑・オレンジ等）が割り当てられ、地図ピンの文字ラベルや受信履歴のテキストは**視認しやすい大きな極太フォント**で描画されます。
                 </li>
               </ul>
             </div>
 
             {/* 3.2 本部指令画面の操作手順 */}
-            <div className="bg-gray-900/30 p-6 rounded-2xl border border-gray-850 space-y-4">
+            <div className="bg-gray-900/30 p-5 rounded-2xl border border-gray-850 space-y-3">
               <div className="flex items-center gap-2 border-b border-gray-850 pb-2">
                 <Laptop size={18} className="text-emerald-400" />
                 <h4 className="text-sm font-black text-white">【本部指令用】PC・タブレットの操作方法</h4>
               </div>
-              <ul className="list-decimal pl-4.5 text-xs text-gray-400 space-y-3 leading-relaxed font-medium">
+              <ul className="list-decimal pl-4 text-xs text-gray-400 space-y-2.5 leading-relaxed font-medium">
                 <li>
-                  <strong className="text-white block mb-0.5">① 地図モニターによる追跡</strong>
-                  地図上にアクティブなすべての分団の「現在地（赤いラベル）」と「これまでの捜索軌跡（赤い軌跡線）」がリアルタイムで描画されます。また、サイドバーの「捜索中の班(分団)」リストで各班のステータスが一覧確認できます。**地図上の各ピンは長押し（右クリックまたはロングタップ）することで、いつでも手動で削除（他端末からも連動消去）できます。**
+                  <strong className="text-white block mb-0.5">① 地図モニターによる追跡とリアルタイム連動削除</strong>
+                  アクティブな全分団の「現在地」と「最新セッションの捜索軌跡」がリアルタイム描画されます。**本部画面で地図上のピンを長押し削除すると、現場の全団員スマホの地図上からも即座に自動連動消去**されます。
                 </li>
                 <li>
                   <strong className="text-white block mb-0.5">② 現場からの伝達メッセージとアラート</strong>
-                  団員からテキスト付きの伝達事項が届くと、通常のチャイムとは異なる「ポーン・ポーン」という警告アラート音が鳴り響き、画面の中央に大きくオレンジ色の「新着メッセージポップアップ」が閉じるまで固定表示されます。内容を確認し「確認して閉じる」を押して消去してください。
+                  団員からテキスト付き伝達事項が届くと、「ポーン・ポーン」という警告音とともに、オレンジ色のメッセージポップアップが大きく固定表示されます。
                 </li>
                 <li>
                   <strong className="text-white block mb-0.5">③ 指令の送信と強力アラーム</strong>
-                  画面下部の送信フォームから、特定の捜索班、あるいは「全員」に向けて指示内容（テキスト最大30文字）を送信できます。指令が送信されると、現場の団員の端末で大音量のサイレン警報音が強制的に鳴り響きます。
+                  特定の捜索班、または全員に向けて指示（テキスト最大30文字）を送信でき、現場の端末で大音量のサイレン警報音が響きます。
                 </li>
                 <li>
-                  <strong className="text-white block mb-0.5">④ 受信履歴の監視と最小化</strong>
-                  団員から届くリアルタイム報告（所属、ステータス、緯度経度、タイムスタンプ、伝達メッセージ）の受信履歴を一覧監視できます。地図を広く使いたい場合は、履歴ウィンドウの右上「∨ ∧」ボタンで受信履歴ウィンドウを最小化（折りたたみ）してください。**なお、受信履歴の一括削除（ゴミ箱アイコン）を実行しても、安全上の最重要共有情報である「危険箇所(紫ピン)」だけは保護され、地図上に残り続けます。**
+                  <strong className="text-white block mb-0.5">④ 『受信履歴』の監視・大文字化・最小化</strong>
+                  団員から届く報告履歴（「生ログ履歴」から『受信履歴』へ名称変更）を一覧監視できます。文字が大きく読みやすく改良されており、右上「∨ ∧」ボタンで最小化も可能です。「危険箇所(紫ピン)」は一括削除後も安全のため自動保護されます。
                 </li>
               </ul>
             </div>
@@ -224,61 +206,43 @@ export default function GuideView({ onGoBack }) {
         </section>
 
         {/* 4. 運用上の注意事項 */}
-        <section className="bg-gray-900/40 p-6 rounded-2xl border border-gray-850 space-y-5 shadow-lg">
-          <h3 className="text-lg font-black text-white border-l-4 border-rescue-500 pl-3 flex items-center gap-2">
-            <AlertTriangle size={20} className="text-rescue-500" /> 運用上の注意事項（重要）
+        <section className="bg-gray-900/40 p-5 rounded-2xl border border-gray-850 space-y-4 shadow-lg">
+          <h3 className="text-base font-black text-white border-l-4 border-rescue-500 pl-3 flex items-center gap-2">
+            <AlertTriangle size={18} className="text-rescue-500" /> 運用上の注意事項（重要）
           </h3>
-          <ul className="list-disc pl-5 text-xs text-gray-400 space-y-3.5 leading-relaxed font-medium">
+          <ul className="list-disc pl-4 text-xs text-gray-400 space-y-2.5 leading-relaxed font-medium">
             <li>
-              <strong className="text-white">位置情報の権限設定について：</strong>
-              団員のスマートフォンで現在地送信を確実に動作させるために、位置情報のアクセス許可を必ず<strong className="text-rescue-500 font-bold">「常に許可」</strong>または「アプリの使用中のみ許可」に設定してください。また、バックグラウンドでのGPS取得を維持するため、捜索中はブラウザを完全に閉じず、バックグラウンドで起動したままにしておいてください。
+              <strong className="text-white">位置情報の権限：</strong>
+              スマホの位置情報許可を<strong className="text-rescue-500 font-bold">「常に許可」</strong>または「アプリの使用中のみ許可」に設定してください。
             </li>
             <li>
-              <strong className="text-white">圏外エリアおよび衛星通信時の全自動送信（v2.0.0機能）：</strong>
-              電波の届かない山岳部では、送信ボタンや位置情報は「送信保留キュー」として端末内（IndexedDB）に一時保存されます。**衛星通信（Starlink / Direct to Cell等）を捉えた際、または携帯電波が一瞬でも回復した際は、15秒ごとのバックグラウンド自動同期機能により、画面を操作しなくても完全自動で即座にアップロードされます。** また、「送信待ち」タブの「手動再試行」ボタンを押すと、いつでも即座に強制送信を試みることができます。
+              <strong className="text-white">衛星通信時の高速自動送信（楽観的非ブロッキング送信）：</strong>
+              衛星通信（Starlink / Direct to Cell等）接続時、1件目の通信応答を待たずに2件目・3件目の報告ボタンも連続して高速自動送信されます。
             </li>
             <li>
-              <strong className="text-white">ブラウザの音響ブロック制限：</strong>
-              スマートフォン（特にiOS）のセキュリティ仕様上、起動直後はWebからのアラーム音がブロックされます。アプリ起動後、<strong className="text-white font-bold">「画面のどこかを一度タップ（または入力欄に入力）」</strong>しておくことで制限がアンロックされ、本部からの警告サイレンが正常に鳴るようになります。
-            </li>
-            <li>
-              <strong className="text-white">危険箇所（紫ピン）の保護と共有について：</strong>
-              「危険箇所（紫ピン）」は、送信した班が捜索終了（下山）した後も、他班の安全のために地図上に残り続ける仕様になっています。誤って打ったピンや、すでに解決済みの箇所については、地図上のピンを**長押し（ロングタップ/右クリック）**して手動で削除してください。
+              <strong className="text-white">危険箇所（紫ピン）のリアルタイム共有と連動削除：</strong>
+              「危険箇所（紫ピン）」は他班の安全のために残ります。解決済みのピンは本部で長押し削除すると、団員スマホ地図からもリアルタイムで即座に連動消去されます。
             </li>
           </ul>
         </section>
 
         {/* 5. よくある質問 (FAQ) */}
-        <section className="bg-gray-900/50 p-6 rounded-2xl border border-gray-800 space-y-6 shadow-xl">
-          <h3 className="text-lg font-black text-white flex items-center gap-2">
-            <HelpCircle size={20} className="text-rescue-500" /> よくある質問 (FAQ)
+        <section className="bg-gray-900/50 p-5 rounded-2xl border border-gray-800 space-y-4 shadow-xl">
+          <h3 className="text-base font-black text-white flex items-center gap-2">
+            <HelpCircle size={18} className="text-rescue-500" /> よくある質問 (FAQ)
           </h3>
-          <div className="space-y-4 text-xs font-medium">
+          <div className="space-y-3 text-xs font-medium">
             <div className="space-y-1">
-              <h4 className="font-black text-white">Q. iPhoneで本部からの指令アラーム音が鳴りません。</h4>
+              <h4 className="font-black text-white">Q. 地図を事前保存する方法と枚数・データ容量は？（v2.1.0更新）</h4>
               <p className="text-gray-400 leading-relaxed">
-                A. iOSの仕様により、アプリ起動後に「画面のどこかを1回以上タップ」するまで音の自動再生がブロックされます。アプリ起動後、所属の入力や画面のどこかを一度タップしておくことで、次回から指令受信時に大音量のサイレンが鳴るようになります。
-              </p>
-            </div>
-            
-            <div className="space-y-1 border-t border-gray-850 pt-3">
-              <h4 className="font-black text-white">Q. iPhoneでバイブが震えないのはなぜですか？</h4>
-              <p className="text-gray-400 leading-relaxed">
-                A. Apple社のプライバシー保護およびセキュリティ規制により、iOSのWebブラウザ上からはバイブレーションを駆動させることができません。このため、iPhoneではバイブの代わりに「画面が赤黒で激しく点滅する視覚的アラート」が作動します。
+                A. 団員画面の「地図」タブで「多良岳山系全域を一括保存」を押すと、通常マップに加え山岳核心部の最詳細拡大地形図（ズームレベル15・16、全2,000〜2,700枚）が保存されます。容量はスマホ写真数枚分と同等の**わずか約25MB**ですので、容量を圧迫しません。
               </p>
             </div>
 
-            <div className="space-y-1 border-t border-gray-850 pt-3">
-              <h4 className="font-black text-white">Q. 地図を事前にダウンロードする方法とデータ容量は？（v2.0.0更新）</h4>
+            <div className="space-y-1 border-t border-gray-850 pt-2.5">
+              <h4 className="font-black text-white">Q. 本部指令画面を複数箇所のPCやスマホで同時起動しても大丈夫ですか？</h4>
               <p className="text-gray-400 leading-relaxed">
-                A. 活動団員画面の「地図」タブを開き、Wi-Fi等のオンライン環境下で「多良岳山系全域を一括保存」ボタンを押します。大村市・鹿島市・諫早市・嬉野市・太良町を含む多良岳山系全域の549枚の等高線マップが約1分で一括ダウンロードされます。容量はスマホ写真数枚分と同等の**わずか約15MB（0.015GB）**ですので、端末容量を一切圧迫しません。
-              </p>
-            </div>
-
-            <div className="space-y-1 border-t border-gray-850 pt-3">
-              <h4 className="font-black text-white">Q. 本部指令画面を現場指揮本部、市役所対策本部、安全対策課、消防署、県央指令室など複数箇所のスマートフォン、タブレット、PCで同時に起動して運用しても大丈夫ですか？</h4>
-              <p className="text-gray-405 leading-relaxed">
-                A. はい、全く問題ありません。リアルタイム・データベース（Firebase）の同期機能により、何台の本部端末で同時に起動していても、1秒未満の時差ですべての端末の地図、ログ、ポップアップメッセージが完全に同じ状態で同期されます。ただし、新しいメッセージを受信した際はすべての起動端末から同時にアラート警告音が鳴るため、必要に応じて近くの端末は消音（ブラウザミュート）にするなどの調整をしてください。また、それぞれの端末で起動直後に「画面を1回以上タップ」して音声を有効化しておくことを忘れないでください。
+                A. はい、全く問題ありません。データベース（Firebase）の同期機能により、すべての本部端末の地図やログが1秒未満の時差で自動同期されます。
               </p>
             </div>
           </div>
