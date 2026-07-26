@@ -75,6 +75,11 @@ export const markMessageAsRead = async (id) => {
   await tx.done;
 };
 
+export const deleteMessage = async (id) => {
+  const db = await getDB();
+  return db.delete('messages', id);
+};
+
 export const clearMessages = async () => {
   const db = await getDB();
   return db.clear('messages');

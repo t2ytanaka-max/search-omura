@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { collection, addDoc, query, onSnapshot, orderBy, limit, serverTimestamp, setDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { getQueue, removeFromQueue, addMessage, getMessages, clearOldMessages } from '../lib/db';
+import { getQueue, removeFromQueue, addMessage, getMessages, clearOldMessages, clearMessages, deleteMessage } from '../lib/db';
 
 export const useSyncQueue = (userId, onNewInstruction) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -288,8 +288,7 @@ export const useSyncQueue = (userId, onNewInstruction) => {
         } else if (change.type === 'removed') {
           // 本部で削除された個別ドキュメントをローカルDBからも削除
           try {
-            const dbInstance = await getDB();
-            await dbInstance.delete('messages', change.doc.id);
+            await deleteMessage(change.doc.id);
             hasNew = true;
           } catch (e) {
             console.warn("Failed to remove message from local DB:", e);
