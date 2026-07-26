@@ -423,11 +423,6 @@ export default function MemberView({ onGoBack }) {
       localStorage.removeItem('search_my_path');
       
       clearMyPastReportsFromFirestore(); // 過去のピン(ST02〜ST04)をFirestoreからも自動一括クリア
-      
-      // 指示履歴をIndexedDBから消去して画面表示を更新
-      clearMessages().then(() => {
-        if (loadLocalMessages) loadLocalMessages();
-      }).catch(e => console.warn("Failed to clear messages:", e));
     }
 
     // 初回・または通常の個別ステータス送信 (手動タップのため includeMessage=true)

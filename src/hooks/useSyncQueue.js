@@ -268,8 +268,8 @@ export const useSyncQueue = (userId, onNewInstruction) => {
               await addMessage(newMsg);
               hasNew = true;
 
-              if (!isPastMessage) {
-                shouldAlert = true; // 本当の新着メッセージのみアラームをトリガー
+              if (!isPastMessage && !newMsg.read) {
+                shouldAlert = true; // 本当の新着未読メッセージのみアラームをトリガー
                 latestAlertMsg = newMsg;
               }
             }
