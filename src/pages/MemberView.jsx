@@ -7,7 +7,7 @@ import NotificationManager from '../components/NotificationManager';
 import { useSyncQueue } from '../hooks/useSyncQueue';
 import { addToQueue, getQueue, clearMessages } from '../lib/db';
 
-import { requestNotificationPermission, getNotificationPermission, sendOSNotification } from '../lib/notification';
+import { requestNotificationPermission, getNotificationPermission, sendOSNotification, warmupServiceWorker } from '../lib/notification';
 
 const REPORT_TEMPLATES = [
   { code: 'ST01', text: '捜索開始', color: 'bg-blue-600 active:bg-blue-700' },
@@ -53,6 +53,11 @@ export default function MemberView({ onGoBack }) {
   useEffect(() => {
     localStorage.setItem('search_my_reports', JSON.stringify(myReports));
   }, [myReports]);
+
+  // アプリ起動時に Service Worker 通知エンジンを即座にウォームアップ (1回目のスリープ通知遅延を防止)
+  useEffect(() => {
+    warmupServiceWorker();
+  }, []);
 
   const [memberTracks, setMemberTracks] = useState([]); // 他の班の軌跡データ (ST01〜ST04, ST06)
   const [sharedDangerMarkers, setSharedDangerMarkers] = useState([]); // 他の班からも共有された危険箇所ピン (ST05)

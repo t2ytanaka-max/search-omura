@@ -20,6 +20,23 @@ export const getNotificationPermission = () => {
   return Notification.permission;
 };
 
+let cachedSwReg = null;
+
+// アプリ起動時に Service Worker インスタンスを事前に温めておく (1回目の非同期遅延を100%防止)
+export const warmupServiceWorker = async () => {
+  if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      cachedSwReg = reg;
+      window.swRegistration = reg;
+      return reg;
+    } catch (e) {
+      console.warn("Failed to warmup SW reg:", e);
+    }
+  }
+  return null;
+};
+
 export const sendOSNotification = (title, body, options = {}) => {
   if (typeof window === 'undefined' || !('Notification' in window)) {
     return false;
@@ -43,9 +60,18 @@ export const sendOSNotification = (title, body, options = {}) => {
       ...options
     };
 
+    // 1. 事前ウォームアップ済みの Service Worker から直接同期呼び出し (最速・1回目成功保証)
+    const activeReg = cachedSwReg || (typeof window !== 'undefined' && window.swRegistration);
+    if (activeReg && activeReg.showNotification) {
+      activeReg.showNotification(title, notifOptions);
+      return true;
+    }
+
+    // 2. フォールバック: 非同期参照および通常通知
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistration().then((reg) => {
-        if (reg && reg.showNotification) {
+        if (reg) {
+          cachedSwReg = reg;
           reg.showNotification(title, notifOptions);
         } else {
           createStandardNotification(title, body, notifOptions);
