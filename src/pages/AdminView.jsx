@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Users, Send, LayoutDashboard, MessageSquare, RefreshCw, Radio, LogOut, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, Send, LayoutDashboard, MessageSquare, RefreshCw, Radio, LogOut, Trash2, ChevronDown, ChevronUp, Bell, MapPin } from 'lucide-react';
 import OfflineMap from '../components/OfflineMap';
 import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -11,6 +11,15 @@ const STATUS_MAP = {
   'ST04': { text: '救助要請', color: 'text-white bg-red-600 border border-red-500 animate-pulse font-extrabold shadow-[0_0_10px_rgba(239,68,68,0.5)]' },
   'ST05': { text: '危険箇所', color: 'text-white bg-purple-600 border border-purple-500' },
   'ST06': { text: '捜索終了', color: 'text-white bg-gray-600 border border-gray-500' }
+};
+
+const STATUS_NAME_MAP = {
+  'ST01': '捜索開始',
+  'ST02': '異状なし',
+  'ST03': '要救助者を発見',
+  'ST04': '救助要請（応援）',
+  'ST05': '危険箇所（滑落注意）',
+  'ST06': '捜索終了'
 };
 
 export default function AdminView({ onGoBack }) {
@@ -93,14 +102,7 @@ export default function AdminView({ onGoBack }) {
     }
   };
 
-  // 新着報告時のスマホバイブレーション
-  const triggerVibration = () => {
-    if ('vibrate' in navigator) {
-      navigator.vibrate([150, 100, 150]); // 短い2連振動
-    }
-  };
-
-  // メッセージ付新着報告時の特別なアラート音 (ポーン・ポーン音)
+  // 本部用：現場伝達事項メッセージ着信音 (ピンポンパンポン4和音チャイム)
   const playAlertSound = () => {
     try {
       let ctx = window.sharedAudioCtx;
@@ -112,35 +114,39 @@ export default function AdminView({ onGoBack }) {
       if (ctx.state === 'suspended') {
         ctx.resume();
       }
+      
       const now = ctx.currentTime;
-      
-      // 1音目: 1174.66Hz (D6 / レ)
-      const osc1 = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.type = 'triangle';
-      osc1.frequency.setValueAtTime(1174.66, now);
-      gain1.gain.setValueAtTime(0.4, now);
-      gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
-      osc1.start(now);
-      osc1.stop(now + 0.4);
-      
-      // 2音目: 1174.66Hz (D6 / レ) - 少し間隔を空けて余韻を持たせる
-      const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.type = 'triangle';
-      osc2.frequency.setValueAtTime(1174.66, now + 0.35);
-      gain2.gain.setValueAtTime(0.4, now + 0.35);
-      gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.75);
-      osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-      osc2.start(now + 0.35);
-      osc2.stop(now + 0.75);
+      const notes = [
+        { freq: 523.25, time: 0.0,  duration: 0.3 }, // ド (C5)
+        { freq: 659.25, time: 0.35, duration: 0.3 }, // ミ (E5)
+        { freq: 783.99, time: 0.7,  duration: 0.3 }, // ソ (G5)
+        { freq: 1046.50, time: 1.05, duration: 0.5 } // 高いド (C6)
+      ];
+
+      notes.forEach(({ freq, time, duration }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + time);
+        gain.gain.setValueAtTime(0.5, now + time);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + time + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + time);
+        osc.stop(now + time + duration);
+      });
     } catch (e) {
       console.error("Failed to play alert sound:", e);
     }
   };
+
+  // 新着報告時のスマホバイブレーション
+  const triggerVibration = () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([150, 100, 150]); // 短い2連振動
+    }
+  };
+
 
   // UTF-8のバイト数を計算するヘルパー
   const getByteLength = (str) => {
@@ -165,17 +171,28 @@ export default function AdminView({ onGoBack }) {
             if (parts.length >= 6) {
               const ts = parseInt(parts[5]);
               if (ts && ts > monitorStartTime.current) {
-                const message = parts[6] || '';
+                const uId = parts[0] || '';
                 const uName = parts[1] || '団員';
+                const stCode = parts[2] || '';
+                const latNum = parseFloat(parts[3]);
+                const lngNum = parseFloat(parts[4]);
+                const message = parts[6] || '';
                 
-                // メッセージがある場合は特別なアラート音＋ポップアップ表示
-                if (message) {
+                const isUrgent = ['ST03', 'ST04', 'ST05'].includes(stCode);
+
+                // 伝達テキストがある場合、または緊急報告（発見・応援・危険箇所）の場合はチャイム音＋ポップアップを表示
+                if (message || isUrgent) {
                   playAlertSound();
                   setActiveMessageAlert({
                     id: change.doc.id,
+                    userId: uId,
                     userName: uName,
+                    statusCode: stCode,
+                    statusText: STATUS_NAME_MAP[stCode] || '活動報告',
                     text: message,
-                    timestamp: Date.now()
+                    lat: latNum,
+                    lng: lngNum,
+                    timestamp: ts || Date.now()
                   });
                 } else {
                   playNotificationSound();
@@ -717,6 +734,75 @@ export default function AdminView({ onGoBack }) {
           )}
         </div>
       </div>
+
+      {/* 現場からの伝達事項・緊急報告ポップアップモーダル */}
+      {activeMessageAlert && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md bg-gray-900 border-4 border-rescue-500 rounded-3xl p-6 shadow-[0_0_50px_rgba(249,115,22,0.4)] space-y-4 text-white">
+            <div className="flex items-center gap-3 border-b border-gray-800 pb-3">
+              <div className="w-12 h-12 rounded-2xl bg-rescue-500/20 border border-rescue-500 flex items-center justify-center shrink-0">
+                <Bell size={24} className="text-rescue-400 animate-bounce" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-black text-rescue-400 uppercase tracking-wider">
+                  現場からの伝達事項・緊急報告
+                </h3>
+                <p className="text-xs font-bold text-gray-300 truncate">
+                  送信者：<span className="text-white text-sm font-black">{activeMessageAlert.userName}</span>（ID: {activeMessageAlert.userId}）
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-gray-950 p-4 rounded-2xl border border-gray-800 space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-bold text-gray-400">
+                <span className="px-2 py-0.5 rounded bg-gray-800 text-rescue-300 font-bold">
+                  {activeMessageAlert.statusText}
+                </span>
+                <span className="font-mono text-gray-400 font-bold">
+                  {new Date(activeMessageAlert.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+              {activeMessageAlert.text ? (
+                <p className="text-lg font-black text-yellow-300 leading-snug break-all pt-1">
+                  「{activeMessageAlert.text}」
+                </p>
+              ) : (
+                <p className="text-xs font-bold text-gray-400 italic pt-1">
+                  （伝達テキストなし・{activeMessageAlert.statusText}報告）
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              {!isNaN(activeMessageAlert.lat) && !isNaN(activeMessageAlert.lng) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (mapRef.current) {
+                      mapRef.current.flyTo({
+                        center: [activeMessageAlert.lng, activeMessageAlert.lat],
+                        zoom: 16,
+                        essential: true
+                      });
+                    }
+                    setActiveMessageAlert(null);
+                  }}
+                  className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 active:scale-95 text-white text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 border border-gray-700 cursor-pointer"
+                >
+                  <MapPin size={16} className="text-rescue-400" /> 地図で確認
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setActiveMessageAlert(null)}
+                className="flex-1 py-3 bg-rescue-500 hover:bg-rescue-600 active:scale-95 text-white text-xs font-black rounded-xl transition-all shadow-lg text-center cursor-pointer"
+              >
+                確認（閉じる）
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -7,6 +7,8 @@ import NotificationManager from '../components/NotificationManager';
 import { useSyncQueue } from '../hooks/useSyncQueue';
 import { addToQueue, getQueue, clearMessages } from '../lib/db';
 
+import { requestNotificationPermission, getNotificationPermission, sendOSNotification } from '../lib/notification';
+
 const REPORT_TEMPLATES = [
   { code: 'ST01', text: '捜索開始', color: 'bg-blue-600 active:bg-blue-700' },
   { code: 'ST02', text: '異状なし', color: 'bg-emerald-600 active:bg-emerald-700' },
@@ -32,6 +34,7 @@ export default function MemberView({ onGoBack }) {
   const [isSearching, setIsSearching] = useState(() => {
     return localStorage.getItem('search_is_searching') === 'true';
   });
+  const [notifPermission, setNotifPermission] = useState(() => getNotificationPermission());
   const autoReportTimerRef = useRef(null);
   const [activeAlert, setActiveAlert] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
@@ -169,9 +172,13 @@ export default function MemberView({ onGoBack }) {
     loadLocalMessages,
     triggerSync
   } = useSyncQueue(userId, (newInstructionMsg) => {
-    // 新着指示があった時のコールバック (今回届いた最新の指示メッセージを直接プロパティ受取)
+    // 新着指示があった時のコールバック (画面内モーダル ＋ スリープ中OS通知の両方を同時トリガー)
     if (newInstructionMsg) {
       setActiveAlert(newInstructionMsg);
+      // スマホがスリープ/画面オフ中であっても画面ロック上に通知バナー＋音バイブでお知らせ
+      sendOSNotification("🚨 本部からの緊急指示", newInstructionMsg.text, {
+        data: { id: newInstructionMsg.id }
+      });
     }
   });
 
@@ -493,6 +500,27 @@ export default function MemberView({ onGoBack }) {
             </div>
           </div>
         </div>
+
+        {/* スリープ通知許可を促すバナー (通知未許可の場合のみ表示) */}
+        {notifPermission !== 'granted' && notifPermission !== 'unsupported' && (
+          <div className="mt-2.5 bg-yellow-950/40 border border-yellow-700/50 p-2.5 rounded-xl flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-base animate-bounce">🔔</span>
+              <p className="text-[10px] text-yellow-300 font-bold leading-tight">
+                スリープ・画面ロック中の指令通知を有効にしますか？
+              </p>
+            </div>
+            <button
+              onClick={async () => {
+                const res = await requestNotificationPermission();
+                setNotifPermission(res);
+              }}
+              className="py-1 px-2.5 bg-yellow-400 hover:bg-yellow-500 active:scale-95 text-black text-[10px] font-black rounded-lg shrink-0 transition-all shadow"
+            >
+              通知を許可する
+            </button>
+          </div>
+        )}
 
         {/* 団員名入力 */}
         <div className="mt-3 flex items-center gap-2">
