@@ -245,8 +245,14 @@ export const useSyncQueue = (userId, onNewInstruction) => {
       const localMsgs = await getMessages();
       const localIds = new Set(localMsgs.map(m => m.id));
 
-      const docChanges = snapshot.docChanges();
-      
+      // 本部で指示が一括削除された場合 (Firestore上の指示ドキュメントが0になった場合)
+      if (snapshot.empty) {
+        await clearMessages();
+        await loadLocalMessages();
+        isFirstLoadRef.current = false;
+        return;
+      }
+
       for (const change of docChanges) {
         if (change.type === 'added') {
           const data = change.doc.data();
@@ -273,6 +279,15 @@ export const useSyncQueue = (userId, onNewInstruction) => {
                 latestAlertMsg = newMsg;
               }
             }
+          }
+        } else if (change.type === 'removed') {
+          // 本部で削除された個別ドキュメントをローカルDBからも削除
+          try {
+            const dbInstance = await getDB();
+            await dbInstance.delete('messages', change.doc.id);
+            hasNew = true;
+          } catch (e) {
+            console.warn("Failed to remove message from local DB:", e);
           }
         }
       }
