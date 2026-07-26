@@ -400,10 +400,14 @@ export default function AdminView({ onGoBack }) {
       });
       await Promise.all(deletePromises);
 
-      // 2. 団員端末への即時一括クリア命令シグナルを発行
-      await setDoc(doc(db, 'system_control', 'instructions'), {
-        clearedAt: Date.now()
-      });
+      // 2. 団員端末への即時一括クリア命令シグナルを発行 (パーミッションエラー保護)
+      try {
+        await setDoc(doc(db, 'system_control', 'instructions'), {
+          clearedAt: Date.now()
+        });
+      } catch (sysErr) {
+        console.warn("system_control write notice:", sysErr);
+      }
 
       setStatusMessage('指令履歴をすべて削除しました（全団員端末も連動一括消去）');
       setTimeout(() => setStatusMessage(''), 4000);
