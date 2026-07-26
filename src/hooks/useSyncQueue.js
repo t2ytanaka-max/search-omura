@@ -239,11 +239,15 @@ export const useSyncQueue = (userId, onNewInstruction) => {
     );
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
+      // 初回スナップショットかどうかを判定
+      const isInitialLoad = isFirstLoadRef.current;
+      // 2回目以降の通信のためにフラグを更新
+      isFirstLoadRef.current = false;
+
       // 本部で指示が一括削除された場合 (Firestore上の指示ドキュメントが0になった場合)
       if (snapshot.empty) {
         await clearMessages();
         setMessagesList([]); // 団員スマホの画面表示を即座に空クリア
-        isFirstLoadRef.current = false;
         return;
       }
 
@@ -264,7 +268,7 @@ export const useSyncQueue = (userId, onNewInstruction) => {
           if (data.target === 'all' || data.target === userId) {
             if (!localIds.has(docId)) {
               // 初回ロード時、またはアプリ起動時間より古い過去の指示は「既読」としてローカルに保存し、アラームは鳴らさない
-              const isPastMessage = isFirstLoadRef.current || msgTimestamp < appStartTimeRef.current;
+              const isPastMessage = isInitialLoad || msgTimestamp < appStartTimeRef.current;
               
               const newMsg = {
                 id: docId,
@@ -292,9 +296,6 @@ export const useSyncQueue = (userId, onNewInstruction) => {
           }
         }
       }
-
-      // 初回スナップショット処理が終わったらロード完了とする
-      isFirstLoadRef.current = false;
 
       if (hasNew) {
         await loadLocalMessages();
