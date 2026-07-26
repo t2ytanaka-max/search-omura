@@ -46,7 +46,7 @@ const MARKER_STYLE_MAP = {
   'ST05': { text: '危険', color: 'bg-purple-600 text-white border-white', arrowColor: 'border-t-purple-600' }
 };
 
-export default function OfflineMap({ currentPosition, memberTracks = [], reportMarkers = [], onDeleteMarker }) {
+export default function OfflineMap({ currentPosition, memberTracks = [], reportMarkers = [], onDeleteMarker, centerTarget }) {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const marker = useRef(null);
@@ -158,6 +158,21 @@ export default function OfflineMap({ currentPosition, memberTracks = [], reportM
         .addTo(map.current);
     }
   }, [cachedTilesMap]); // キャッシュがロードされたら地図を再初期化または追従
+
+  // 外部からの指定座標へのスムーズ移動 (「地図で位置を確認」押下時)
+  useEffect(() => {
+    if (map.current && centerTarget && typeof centerTarget.lat === 'number' && typeof centerTarget.lng === 'number') {
+      try {
+        map.current.flyTo({
+          center: [centerTarget.lng, centerTarget.lat],
+          zoom: centerTarget.zoom || 16,
+          essential: true
+        });
+      } catch (e) {
+        console.warn("flyTo failed:", e);
+      }
+    }
+  }, [centerTarget]);
 
   // 自分の現在地マーカー更新＆中心移動 (画面オフ時は無駄なイージングアニメーションを行わずバッテリー節約)
   useEffect(() => {

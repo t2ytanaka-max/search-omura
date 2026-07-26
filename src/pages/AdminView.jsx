@@ -31,6 +31,7 @@ export default function AdminView({ onGoBack }) {
   const [statusMessage, setStatusMessage] = useState('');
   const [activeTab, setActiveTab] = useState('map'); // 'map', 'control', 'logs' (mobile responsive tabs)
   const [activeMessageAlert, setActiveMessageAlert] = useState(null); // 新着メッセージポップアップ
+  const [mapCenterTarget, setMapCenterTarget] = useState(null); // 地図移動ターゲット座標
   const [isLogsMinimized, setIsLogsMinimized] = useState(false); // 受信生ログ履歴の最小化状態
   const [reportMarkers, setReportMarkers] = useState([]); // 報告されたマーカー(要救助者発見、危険箇所など)
 
@@ -441,27 +442,6 @@ export default function AdminView({ onGoBack }) {
       className="flex flex-col md:flex-row h-[100dvh] w-full bg-gray-950 text-white overflow-hidden relative"
     >
       
-      {/* 新着緊急伝達ポップアップアラート (中央配置) */}
-      {/* 新着緊急伝達ポップアップアラート (スマホ対応サイズ) */}
-      {activeMessageAlert && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-50 bg-orange-600 border-2 border-white text-white p-3.5 rounded-xl shadow-2xl max-w-[280px] sm:max-w-xs w-11/12 animate-pulse">
-          <div className="flex items-center gap-2 mb-1.5 border-b border-orange-500 pb-1.5">
-            <Radio size={14} className="text-white shrink-0" />
-            <div>
-              <span className="text-[8px] font-mono font-bold tracking-widest bg-black/30 px-1.5 py-0.5 rounded-full uppercase">新着メッセージ</span>
-              <p className="text-[10px] font-black mt-0.5">送信者: {activeMessageAlert.userName}</p>
-            </div>
-          </div>
-          <p className="text-xs font-black tracking-tight leading-normal break-all">{activeMessageAlert.text}</p>
-          <button
-            type="button"
-            onClick={() => setActiveMessageAlert(null)}
-            className="w-full mt-2.5 py-1 bg-black/60 hover:bg-black active:scale-95 text-[10px] font-black rounded-lg transition-all border border-gray-800"
-          >
-            確認して閉じる
-          </button>
-        </div>
-      )}
       
       {/* モバイル用タブヘッダー (PCでは非表示) */}
       <div className="md:hidden flex items-center bg-gray-900 border-b border-gray-800 z-30 px-2 w-full">
@@ -669,7 +649,7 @@ export default function AdminView({ onGoBack }) {
 
       {/* 地図エリア：モバイルでは地図タブ選択時のみ表示 */}
       <main className={`${activeTab === 'map' ? 'block' : 'hidden'} md:block flex-1 relative bg-gray-950 h-full`}>
-        <OfflineMap memberTracks={memberTracks} reportMarkers={reportMarkers} onDeleteMarker={handleDeleteMarker} />
+        <OfflineMap memberTracks={memberTracks} reportMarkers={reportMarkers} onDeleteMarker={handleDeleteMarker} centerTarget={mapCenterTarget} />
       </main>
 
       {/* 受信履歴オーバーレイ：モバイルではログタブ選択時にスクロール表示、PCでは右上にコンパクト絶対配置 */}
@@ -736,73 +716,88 @@ export default function AdminView({ onGoBack }) {
       </div>
 
       {/* 現場からの伝達事項・緊急報告ポップアップモーダル */}
-      {activeMessageAlert && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md bg-gray-900 border-4 border-rescue-500 rounded-3xl p-6 shadow-[0_0_50px_rgba(249,115,22,0.4)] space-y-4 text-white">
-            <div className="flex items-center gap-3 border-b border-gray-800 pb-3">
-              <div className="w-12 h-12 rounded-2xl bg-rescue-500/20 border border-rescue-500 flex items-center justify-center shrink-0">
-                <Bell size={24} className="text-rescue-400 animate-bounce" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-black text-rescue-400 uppercase tracking-wider">
-                  現場からの伝達事項・緊急報告
-                </h3>
-                <p className="text-xs font-bold text-gray-300 truncate">
-                  送信者：<span className="text-white text-sm font-black">{activeMessageAlert.userName}</span>（ID: {activeMessageAlert.userId}）
-                </p>
-              </div>
-            </div>
+      {activeMessageAlert && (() => {
+        const badgeStyle = {
+          'ST01': 'bg-blue-600 text-white border-blue-500',
+          'ST02': 'bg-emerald-600 text-white border-emerald-500',
+          'ST03': 'bg-yellow-400 text-black border-yellow-500 font-black',
+          'ST04': 'bg-red-600 text-white border-red-500 animate-pulse',
+          'ST05': 'bg-purple-600 text-white border-purple-500',
+          'ST06': 'bg-gray-600 text-white border-gray-500'
+        }[activeMessageAlert.statusCode] || 'bg-gray-800 text-white border-gray-700';
 
-            <div className="bg-gray-950 p-4 rounded-2xl border border-gray-800 space-y-2">
-              <div className="flex items-center justify-between text-[11px] font-bold text-gray-400">
-                <span className="px-2 py-0.5 rounded bg-gray-800 text-rescue-300 font-bold">
-                  {activeMessageAlert.statusText}
-                </span>
-                <span className="font-mono text-gray-400 font-bold">
-                  {new Date(activeMessageAlert.timestamp).toLocaleTimeString()}
-                </span>
+        return (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+            <div className="w-full max-w-md bg-gray-900 border-4 border-rescue-500 rounded-3xl p-6 shadow-[0_0_50px_rgba(249,115,22,0.4)] space-y-4 text-white">
+              {/* モーダルヘッダー */}
+              <div className="flex items-center gap-3 border-b border-gray-800 pb-3">
+                <div className="w-12 h-12 rounded-2xl bg-rescue-500/20 border border-rescue-500 flex items-center justify-center shrink-0">
+                  <Bell size={26} className="text-rescue-400 animate-bounce" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-xs font-black text-rescue-400 uppercase tracking-wider">
+                    現場からの伝達事項・緊急報告
+                  </h3>
+                  <p className="text-sm font-bold text-gray-300 truncate mt-0.5">
+                    送信者：<span className="text-white text-base font-black">{activeMessageAlert.userName}</span> <span className="text-xs text-gray-400 font-mono">({activeMessageAlert.userId})</span>
+                  </p>
+                </div>
               </div>
-              {activeMessageAlert.text ? (
-                <p className="text-lg font-black text-yellow-300 leading-snug break-all pt-1">
-                  「{activeMessageAlert.text}」
-                </p>
-              ) : (
-                <p className="text-xs font-bold text-gray-400 italic pt-1">
-                  （伝達テキストなし・{activeMessageAlert.statusText}報告）
-                </p>
-              )}
-            </div>
 
-            <div className="flex items-center gap-2 pt-2">
-              {!isNaN(activeMessageAlert.lat) && !isNaN(activeMessageAlert.lng) && (
+              {/* メッセージ本文およびステータスバッジ */}
+              <div className="bg-gray-950 p-4 rounded-2xl border border-gray-800 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`text-xs sm:text-sm font-black px-3 py-1 rounded-lg border shadow-sm ${badgeStyle}`}>
+                    {activeMessageAlert.statusText}
+                  </span>
+                  <span className="font-mono text-xs font-bold text-gray-400">
+                    {new Date(activeMessageAlert.timestamp).toLocaleTimeString()}
+                  </span>
+                </div>
+
+                {activeMessageAlert.text ? (
+                  <p className="text-lg sm:text-xl font-black text-yellow-300 leading-snug break-all pt-1">
+                    「{activeMessageAlert.text}」
+                  </p>
+                ) : (
+                  <p className="text-sm font-bold text-gray-400 italic pt-1">
+                    （伝達テキストなし・{activeMessageAlert.statusText}の報告）
+                  </p>
+                )}
+              </div>
+
+              {/* ボタンエリア */}
+              <div className="flex items-center gap-2 pt-2">
+                {!isNaN(activeMessageAlert.lat) && !isNaN(activeMessageAlert.lng) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMapCenterTarget({
+                        lat: activeMessageAlert.lat,
+                        lng: activeMessageAlert.lng,
+                        zoom: 16,
+                        time: Date.now()
+                      });
+                      setActiveTab('map');
+                      setActiveMessageAlert(null);
+                    }}
+                    className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 active:scale-95 text-white text-xs sm:text-sm font-black rounded-xl transition-all flex items-center justify-center gap-1.5 border border-gray-700 cursor-pointer shadow"
+                  >
+                    <MapPin size={16} className="text-rescue-400 shrink-0" /> 地図で位置を確認
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => {
-                    if (mapRef.current) {
-                      mapRef.current.flyTo({
-                        center: [activeMessageAlert.lng, activeMessageAlert.lat],
-                        zoom: 16,
-                        essential: true
-                      });
-                    }
-                    setActiveMessageAlert(null);
-                  }}
-                  className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 active:scale-95 text-white text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 border border-gray-700 cursor-pointer"
+                  onClick={() => setActiveMessageAlert(null)}
+                  className="flex-1 py-3 bg-rescue-500 hover:bg-rescue-600 active:scale-95 text-white text-xs sm:text-sm font-black rounded-xl transition-all shadow-lg text-center cursor-pointer"
                 >
-                  <MapPin size={16} className="text-rescue-400" /> 地図で確認
+                  確認（閉じる）
                 </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setActiveMessageAlert(null)}
-                className="flex-1 py-3 bg-rescue-500 hover:bg-rescue-600 active:scale-95 text-white text-xs font-black rounded-xl transition-all shadow-lg text-center cursor-pointer"
-              >
-                確認（閉じる）
-              </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
     </div>
   );
