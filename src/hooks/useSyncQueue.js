@@ -239,19 +239,20 @@ export const useSyncQueue = (userId, onNewInstruction) => {
     );
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
+      // 本部で指示が一括削除された場合 (Firestore上の指示ドキュメントが0になった場合)
+      if (snapshot.empty) {
+        await clearMessages();
+        setMessagesList([]); // 団員スマホの画面表示を即座に空クリア
+        isFirstLoadRef.current = false;
+        return;
+      }
+
+      const docChanges = snapshot.docChanges();
       let hasNew = false;
       let shouldAlert = false;
       let latestAlertMsg = null;
       const localMsgs = await getMessages();
       const localIds = new Set(localMsgs.map(m => m.id));
-
-      // 本部で指示が一括削除された場合 (Firestore上の指示ドキュメントが0になった場合)
-      if (snapshot.empty) {
-        await clearMessages();
-        await loadLocalMessages();
-        isFirstLoadRef.current = false;
-        return;
-      }
 
       for (const change of docChanges) {
         if (change.type === 'added') {
@@ -296,7 +297,7 @@ export const useSyncQueue = (userId, onNewInstruction) => {
       isFirstLoadRef.current = false;
 
       if (hasNew) {
-        loadLocalMessages();
+        await loadLocalMessages();
         if (shouldAlert && onNewInstruction && latestAlertMsg) {
           onNewInstruction(latestAlertMsg);
         }
