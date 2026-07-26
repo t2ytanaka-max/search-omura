@@ -30,26 +30,31 @@ export const sendOSNotification = (title, body, options = {}) => {
   }
 
   try {
-    // サービスワーカーが利用可能であれば ServiceWorkerRegistration.showNotification を優先
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.ready.then((reg) => {
-        reg.showNotification(title, {
-          body: body,
-          icon: '/pwa-192x192.png',
-          badge: '/pwa-192x192.png',
-          vibrate: [1000, 500, 1000, 500, 1000],
-          tag: 'instruction-alert',
-          renotify: true,
-          requireInteraction: true, // ユーザーが操作するまで画面に固定
-          data: options.data || {},
-          ...options
-        });
+    const notifOptions = {
+      body: body,
+      icon: '/icon.png',
+      badge: '/icon.png',
+      vibrate: [1000, 500, 1000, 500, 1000],
+      tag: 'instruction-alert',
+      renotify: true,
+      requireInteraction: true, // 画面点灯・ユーザー操作まで固定表示
+      silent: false,
+      data: options.data || {},
+      ...options
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then((reg) => {
+        if (reg && reg.showNotification) {
+          reg.showNotification(title, notifOptions);
+        } else {
+          createStandardNotification(title, body, notifOptions);
+        }
       }).catch(() => {
-        // フォールバック: 通常の Notification API
-        createStandardNotification(title, body, options);
+        createStandardNotification(title, body, notifOptions);
       });
     } else {
-      createStandardNotification(title, body, options);
+      createStandardNotification(title, body, notifOptions);
     }
     return true;
   } catch (e) {

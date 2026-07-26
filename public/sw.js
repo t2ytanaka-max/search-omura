@@ -79,3 +79,47 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+// バックグラウンド・スリープ中の端末画面を起動・点灯させるプッシュ通知受信用ハンドラー
+self.addEventListener('push', (event) => {
+  let data = { title: '🚨 本部からの緊急指示', body: '新しい指示を受信しました。' };
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body || '本部からの指示が届いています。',
+    icon: '/icon.png',
+    badge: '/icon.png',
+    vibrate: [1000, 500, 1000, 500, 1000],
+    tag: 'instruction-alert',
+    renotify: true,
+    requireInteraction: true, // 画面点灯＆ユーザー操作まで固定表示
+    data: data
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || '🚨 本部からの緊急指示', options)
+  );
+});
+
+// ロック画面・スリープ中の通知タップ時にアプリを最前面表示
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes('/') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('/');
+      }
+    })
+  );
+});
