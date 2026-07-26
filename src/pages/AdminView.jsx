@@ -385,12 +385,13 @@ export default function AdminView({ onGoBack }) {
 
   // 本部指令履歴の一括削除
   const handleClearInstructions = async () => {
-    if (!window.confirm("本当に「すべての本部指令履歴」を削除しますか？\n（団員の端末に届いている指示履歴リストもすべて消去されます。この操作は取り消せません）")) {
+    if (!window.confirm("本当に「すべての本部指令履歴」を削除しますか？\n（現場の全団員端末の指示履歴リストも一括消去されます。この操作は取り消せません）")) {
       return;
     }
     
     setStatusMessage('指令履歴削除中...');
     try {
+      // 1. 全指示ドキュメントを削除
       const q = query(collection(db, 'instructions'));
       const querySnapshot = await getDocs(q);
       const deletePromises = [];
@@ -398,7 +399,13 @@ export default function AdminView({ onGoBack }) {
         deletePromises.push(deleteDoc(doc(db, 'instructions', document.id)));
       });
       await Promise.all(deletePromises);
-      setStatusMessage('指令履歴をすべて削除しました');
+
+      // 2. 団員端末への即時一括クリア命令シグナルを発行
+      await setDoc(doc(db, 'system_control', 'instructions'), {
+        clearedAt: Date.now()
+      });
+
+      setStatusMessage('指令履歴をすべて削除しました（全団員端末も連動一括消去）');
       setTimeout(() => setStatusMessage(''), 4000);
     } catch (error) {
       console.error("Failed to clear instructions:", error);

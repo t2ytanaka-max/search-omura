@@ -302,11 +302,27 @@ export const useSyncQueue = (userId, onNewInstruction) => {
           onNewInstruction(latestAlertMsg);
         }
       }
-    }, (error) => {
-      console.error("Instructions subscription error:", error);
     });
 
-    return () => unsubscribe();
+    // 3.1 本部からの「指示一括削除シグナル」をリアルタイム監視 (シグナル受信時に即座に全クリア)
+    const controlUnsub = onSnapshot(doc(db, 'system_control', 'instructions'), async (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.clearedAt) {
+          try {
+            await clearMessages();
+            setMessagesList([]); // 団員画面の「指示履歴」表示を即座に100%空クリア！
+          } catch (e) {
+            console.warn("Failed to clear messages on signal:", e);
+          }
+        }
+      }
+    }, (err) => console.warn("Control listener error:", err));
+
+    return () => {
+      unsubscribe();
+      controlUnsub();
+    };
   }, [userId, onNewInstruction]);
 
   return {
