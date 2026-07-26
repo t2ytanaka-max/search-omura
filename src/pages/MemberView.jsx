@@ -168,21 +168,21 @@ export default function MemberView({ onGoBack }) {
     updateQueueCount,
     loadLocalMessages,
     triggerSync
-  } = useSyncQueue(userId, () => {
-    // 新着指示があった時のコールバック
-    const latest = messagesList[0] || { id: 'test', text: '本部からの指示を受信しました。' };
-    setActiveAlert(latest);
+  } = useSyncQueue(userId, (newInstructionMsg) => {
+    // 新着指示があった時のコールバック (最新の指示メッセージを直接受取)
+    if (newInstructionMsg) {
+      setActiveAlert(newInstructionMsg);
+    }
   });
 
-  // 最新メッセージ受信時に即座にモーダルを表示するための監視
+  // 最新メッセージ受信時に未読がある場合のセーフティ監視
   useEffect(() => {
-    if (!isSearching) return; // 捜索終了時はポップアップしない
     const sessionStartTime = parseInt(localStorage.getItem('search_session_start_time') || '0');
     const unread = messagesList.find(m => !m.read && m.timestamp >= sessionStartTime);
-    if (unread) {
+    if (unread && !activeAlert) {
       setActiveAlert(unread);
     }
-  }, [messagesList, isSearching]);
+  }, [messagesList]);
 
   // GPSの常時監視（地図用＆ローカル軌跡の記録）
   useEffect(() => {
@@ -649,11 +649,8 @@ export default function MemberView({ onGoBack }) {
 
         {/* タブ3: 指示・着信履歴 */}
         {activeTab === 'messages' && (() => {
-          const sessionStartTime = parseInt(localStorage.getItem('search_session_start_time') || '0');
-          // 捜索中であり、かつ最新セッション開始時刻以降のメッセージのみに絞り込む
-          const activeMsgs = isSearching
-            ? messagesList.filter(msg => msg.timestamp >= sessionStartTime)
-            : [];
+          // 本部から届いた全指示メッセージを表示
+          const activeMsgs = messagesList;
 
           return (
             <div className="h-full p-4 overflow-y-auto space-y-3">

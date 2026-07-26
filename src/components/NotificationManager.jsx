@@ -17,11 +17,19 @@ export default function NotificationManager({ activeAlert, onClear }) {
   }, [activeAlert]);
 
   const startAlarm = () => {
+    // 直前のバイブタイマーがあれば確実に消去
+    if (vibrateIntervalRef.current) {
+      clearInterval(vibrateIntervalRef.current);
+      vibrateIntervalRef.current = null;
+    }
+
     // 1. 強力なバイブレーション（1秒振動、0.5秒停止の繰り返し）
     if ('vibrate' in navigator) {
-      navigator.vibrate([1000, 500, 1000]);
+      try { navigator.vibrate([1000, 500, 1000]); } catch(e){}
       vibrateIntervalRef.current = setInterval(() => {
-        navigator.vibrate([1000, 500, 1000]);
+        if ('vibrate' in navigator) {
+          try { navigator.vibrate([1000, 500, 1000]); } catch(e){}
+        }
       }, 3000);
     }
 
@@ -73,12 +81,16 @@ export default function NotificationManager({ activeAlert, onClear }) {
   };
 
   const stopAlarm = async () => {
-    // バイブレーション停止
+    // バイブレーション完全消去
     if (vibrateIntervalRef.current) {
       clearInterval(vibrateIntervalRef.current);
+      vibrateIntervalRef.current = null;
     }
     if ('vibrate' in navigator) {
-      navigator.vibrate(0);
+      try {
+        navigator.vibrate(0);
+        navigator.vibrate([]);
+      } catch (e) {}
     }
 
     // 音声停止

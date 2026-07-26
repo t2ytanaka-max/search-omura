@@ -241,6 +241,7 @@ export const useSyncQueue = (userId, onNewInstruction) => {
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       let hasNew = false;
       let shouldAlert = false;
+      let latestAlertMsg = null;
       const localMsgs = await getMessages();
       const localIds = new Set(localMsgs.map(m => m.id));
 
@@ -269,6 +270,7 @@ export const useSyncQueue = (userId, onNewInstruction) => {
 
               if (!isPastMessage) {
                 shouldAlert = true; // 本当の新着メッセージのみアラームをトリガー
+                latestAlertMsg = newMsg;
               }
             }
           }
@@ -280,8 +282,8 @@ export const useSyncQueue = (userId, onNewInstruction) => {
 
       if (hasNew) {
         loadLocalMessages();
-        if (shouldAlert && onNewInstruction) {
-          onNewInstruction();
+        if (shouldAlert && onNewInstruction && latestAlertMsg) {
+          onNewInstruction(latestAlertMsg);
         }
       }
     }, (error) => {
