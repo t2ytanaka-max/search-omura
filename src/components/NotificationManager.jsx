@@ -103,12 +103,15 @@ export default function NotificationManager({ activeAlert, onClear }) {
 
     setIsOpen(false);
     onClear();
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+    }
   };
 
   if (!isOpen || !activeAlert) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fade-in">
       <div className="w-full max-w-lg bg-red-900 border-4 border-red-500 rounded-3xl p-6 text-center space-y-6 shadow-[0_0_50px_rgba(239,68,68,0.4)]">
         
         {/* アラートアイコン・アニメーション */}

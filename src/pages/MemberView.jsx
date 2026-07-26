@@ -447,15 +447,15 @@ export default function MemberView({ onGoBack }) {
     <div 
       onClick={unlockAudio}
       onTouchStart={unlockAudio}
-      className="flex flex-col h-[100dvh] w-full bg-gray-950 text-white overflow-hidden"
+      className="fixed inset-0 flex flex-col h-[100dvh] w-full bg-gray-950 text-white overflow-hidden z-0"
     >
       {/* 警告モーダル */}
       <NotificationManager 
         activeAlert={activeAlert} 
         onClear={() => {
           setActiveAlert(null);
-          // 再ロード
-          window.location.reload();
+          // スクロール位置のリセット
+          window.scrollTo(0, 0);
         }} 
       />
 
