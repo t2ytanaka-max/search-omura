@@ -415,6 +415,7 @@ export default function MemberView({ onGoBack }) {
       setMyReports(prev => prev.filter(r => r.statusCode === 'ST05'));
     } else if (template.code === 'ST06') {
       setIsSearching(false);
+      setActiveAlert(null); // 指示アラート表示を即座に完全解除
       // 捜索終了ボタンが押された瞬間に、非同期のGPS取得を待たず即座に危険箇所(ST05)以外のピンをクリアする
       setMyReports(prev => prev.filter(r => r.statusCode === 'ST05'));
       

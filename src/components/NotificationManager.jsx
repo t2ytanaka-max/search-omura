@@ -111,9 +111,13 @@ export default function NotificationManager({ activeAlert, onClear }) {
       audioContextRef.current = null;
     }
 
-    // 既読処理
-    if (activeAlert) {
-      await markMessageAsRead(activeAlert.id);
+    // 既読処理 (対象のメッセージIDを100%確実にIndexedDB上で既読完了させる)
+    if (activeAlert && activeAlert.id) {
+      try {
+        await markMessageAsRead(activeAlert.id);
+      } catch (e) {
+        console.warn("Failed to mark message as read:", e);
+      }
     }
 
     setIsOpen(false);
