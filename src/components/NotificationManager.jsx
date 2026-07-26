@@ -2,12 +2,27 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ShieldAlert, Volume2 } from 'lucide-react';
 import { markMessageAsRead } from '../lib/db';
 
+// コンポーネントの再描画に依存しない最高権限のグローバルバイブタイマー
+let globalVibrateInterval = null;
+
+const stopGlobalVibration = () => {
+  if (globalVibrateInterval) {
+    clearInterval(globalVibrateInterval);
+    globalVibrateInterval = null;
+  }
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    try {
+      navigator.vibrate(0);
+      navigator.vibrate([]);
+    } catch (e) {}
+  }
+};
+
 export default function NotificationManager({ activeAlert, onClear }) {
   const [isOpen, setIsOpen] = useState(false);
   const audioContextRef = useRef(null);
   const oscillatorRef = useRef(null);
   const gainNodeRef = useRef(null);
-  const vibrateIntervalRef = useRef(null);
 
   useEffect(() => {
     if (activeAlert) {
@@ -17,17 +32,14 @@ export default function NotificationManager({ activeAlert, onClear }) {
   }, [activeAlert]);
 
   const startAlarm = () => {
-    // 直前のバイブタイマーがあれば確実に消去
-    if (vibrateIntervalRef.current) {
-      clearInterval(vibrateIntervalRef.current);
-      vibrateIntervalRef.current = null;
-    }
+    // 既存のバイブタイマーを完全に停止・リセット
+    stopGlobalVibration();
 
     // 1. 強力なバイブレーション（1秒振動、0.5秒停止の繰り返し）
-    if ('vibrate' in navigator) {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try { navigator.vibrate([1000, 500, 1000]); } catch(e){}
-      vibrateIntervalRef.current = setInterval(() => {
-        if ('vibrate' in navigator) {
+      globalVibrateInterval = setInterval(() => {
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
           try { navigator.vibrate([1000, 500, 1000]); } catch(e){}
         }
       }, 3000);
@@ -81,17 +93,8 @@ export default function NotificationManager({ activeAlert, onClear }) {
   };
 
   const stopAlarm = async () => {
-    // バイブレーション完全消去
-    if (vibrateIntervalRef.current) {
-      clearInterval(vibrateIntervalRef.current);
-      vibrateIntervalRef.current = null;
-    }
-    if ('vibrate' in navigator) {
-      try {
-        navigator.vibrate(0);
-        navigator.vibrate([]);
-      } catch (e) {}
-    }
+    // バイブレーション完全消去 (グローバルタイマー停止)
+    stopGlobalVibration();
 
     // 音声停止
     if (oscillatorRef.current) {

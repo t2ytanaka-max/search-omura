@@ -169,20 +169,11 @@ export default function MemberView({ onGoBack }) {
     loadLocalMessages,
     triggerSync
   } = useSyncQueue(userId, (newInstructionMsg) => {
-    // 新着指示があった時のコールバック (最新の指示メッセージを直接受取)
+    // 新着指示があった時のコールバック (今回届いた最新の指示メッセージを直接プロパティ受取)
     if (newInstructionMsg) {
       setActiveAlert(newInstructionMsg);
     }
   });
-
-  // 最新メッセージ受信時に未読がある場合のセーフティ監視
-  useEffect(() => {
-    const sessionStartTime = parseInt(localStorage.getItem('search_session_start_time') || '0');
-    const unread = messagesList.find(m => !m.read && m.timestamp >= sessionStartTime);
-    if (unread && !activeAlert) {
-      setActiveAlert(unread);
-    }
-  }, [messagesList]);
 
   // GPSの常時監視（地図用＆ローカル軌跡の記録）
   useEffect(() => {
