@@ -179,25 +179,19 @@ export default function AdminView({ onGoBack }) {
                 const lngNum = parseFloat(parts[4]);
                 const message = parts[6] || '';
                 
-                const isUrgent = ['ST03', 'ST04', 'ST05'].includes(stCode);
-
-                // 伝達テキストがある場合、または緊急報告（発見・応援・危険箇所）の場合はチャイム音＋ポップアップを表示
-                if (message || isUrgent) {
-                  playAlertSound();
-                  setActiveMessageAlert({
-                    id: change.doc.id,
-                    userId: uId,
-                    userName: uName,
-                    statusCode: stCode,
-                    statusText: STATUS_NAME_MAP[stCode] || '活動報告',
-                    text: message,
-                    lat: latNum,
-                    lng: lngNum,
-                    timestamp: ts || Date.now()
-                  });
-                } else {
-                  playNotificationSound();
-                }
+                // 全ての報告(ST01~ST06)および伝達テキストについて、本部画面にポップアップ表示＆チャイム音通知
+                playAlertSound();
+                setActiveMessageAlert({
+                  id: change.doc.id,
+                  userId: uId,
+                  userName: uName,
+                  statusCode: stCode,
+                  statusText: STATUS_NAME_MAP[stCode] || '活動報告',
+                  text: message,
+                  lat: latNum,
+                  lng: lngNum,
+                  timestamp: ts || Date.now()
+                });
                 triggerVibration();
               }
             }
