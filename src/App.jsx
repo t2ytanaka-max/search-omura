@@ -4,6 +4,8 @@ import AdminView from './pages/AdminView';
 import GuideView from './pages/GuideView';
 import { Shield, Users, Compass, BookOpen } from 'lucide-react';
 
+import { APP_VERSION } from './config/version';
+
 export default function App() {
   const [viewMode, setViewMode] = useState(() => {
     // 起動時の初期モード判定 (直接URLから入った場合はポータルをスキップ)
@@ -102,7 +104,7 @@ export default function App() {
             本アプリおよび本マニュアルに関する一切の権利（著作権を含む）は、開発者（大村市消防団 田中哲也）に帰属します。無断での複製、転載、再配布を禁じます。
           </div>
           <div className="text-[9px] text-rescue-500 font-mono tracking-widest font-black pt-1">
-            ⛰️ 消防団専用救助支援システム v2.1.0
+            ⛰️ 消防団専用救助支援システム {APP_VERSION}
           </div>
         </div>
       </div>
