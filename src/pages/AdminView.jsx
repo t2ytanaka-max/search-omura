@@ -432,7 +432,7 @@ export default function AdminView({ onGoBack }) {
     >
       
       {/* スリープ・ロック時通知許可案内バナー */}
-      {notifPermission !== 'granted' && (
+      {notifPermission === 'default' && (
         <div className="w-full bg-yellow-500/20 border-b border-yellow-500/50 p-2 text-center text-xs font-black text-yellow-300 flex items-center justify-center gap-2 z-50 shrink-0">
           {notifPermission === 'unsupported' ? (
             <span>ℹ️ お使いのiPhone(iOS15以前)はiOS仕様によりスリープWeb通知非対応ですが、画面表示中の地図・全報告・着信音機能は100%ご利用いただけます。</span>

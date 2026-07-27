@@ -1,23 +1,31 @@
 // OSレベル・スリープ中Web Notification APIユーティリティ
 
 export const requestNotificationPermission = async () => {
-  if (typeof window === 'undefined' || !('Notification' in window)) {
+  if (typeof window === 'undefined' || !('Notification' in window) || !window.Notification || typeof Notification.requestPermission !== 'function') {
     return 'unsupported';
   }
   try {
-    const permission = await Notification.requestPermission();
-    return permission;
+    const result = Notification.requestPermission();
+    if (result && typeof result.then === 'function') {
+      const permission = await result;
+      return permission;
+    }
+    return Notification.permission || 'unsupported';
   } catch (e) {
     console.warn("Failed to request notification permission:", e);
-    return 'denied';
+    return 'unsupported';
   }
 };
 
 export const getNotificationPermission = () => {
-  if (typeof window === 'undefined' || !('Notification' in window)) {
+  try {
+    if (typeof window === 'undefined' || !('Notification' in window) || !window.Notification || !Notification.permission) {
+      return 'unsupported';
+    }
+    return Notification.permission;
+  } catch (e) {
     return 'unsupported';
   }
-  return Notification.permission;
 };
 
 let cachedSwReg = null;
