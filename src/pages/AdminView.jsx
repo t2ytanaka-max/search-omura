@@ -60,28 +60,6 @@ export default function AdminView({ onGoBack }) {
 
   // 音声自動再生の制限解除 (ユーザーの最初のアクション時)
   const unlockAudio = () => {
-    if (window.sharedAudioCtx) return;
-    try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioContext();
-      // iOSブロック解除用無音再生
-      const buffer = ctx.createBuffer(1, 1, 22050);
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(ctx.destination);
-      source.start(0);
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
-      window.sharedAudioCtx = ctx;
-      console.log("Admin Audio context unlocked.");
-    } catch (e) {
-      console.error("Failed to unlock admin audio:", e);
-    }
-  };
-
-  // 新着報告時の通知チャイム (ピッピッ音)
-  const playNotificationSound = () => {
     try {
       let ctx = window.sharedAudioCtx;
       if (!ctx) {
@@ -89,35 +67,57 @@ export default function AdminView({ onGoBack }) {
         ctx = new AudioContext();
         window.sharedAudioCtx = ctx;
       }
-      if (ctx.state === 'suspended') {
+      if (ctx && ctx.state === 'suspended') {
         ctx.resume();
       }
+    } catch (e) {
+      console.error("Failed to unlock admin audio:", e);
+    }
+  };
+
+  // 新着報告時の通知チャイム (iOS無音制限突破・高音クリア着信音)
+  const playNotificationSound = () => {
+    try {
+      unlockAudio();
+      let ctx = window.sharedAudioCtx;
+      if (!ctx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        ctx = new AudioContext();
+        window.sharedAudioCtx = ctx;
+      }
       
-      const now = ctx.currentTime;
-      
-      // 1音目: 880Hz (ラ)
-      const osc1 = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(880, now);
-      gain1.gain.setValueAtTime(0.35, now);
-      gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
-      osc1.start(now);
-      osc1.stop(now + 0.1);
-      
-      // 2音目: 1046.5Hz (ド)
-      const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(1046.5, now + 0.12);
-      gain2.gain.setValueAtTime(0.35, now + 0.12);
-      gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-      osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-      osc2.start(now + 0.12);
-      osc2.stop(now + 0.25);
+      const playBeep = () => {
+        const now = ctx.currentTime;
+        // 1音目: 1046.5Hz (C6 / ド)
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(1046.5, now);
+        gain1.gain.setValueAtTime(0.7, now);
+        gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.15);
+        
+        // 2音目: 1318.5Hz (E6 / ミ) - 高くクッキリ通る着信音
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(1318.5, now + 0.15);
+        gain2.gain.setValueAtTime(0.7, now + 0.15);
+        gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(now + 0.15);
+        osc2.stop(now + 0.35);
+      };
+
+      if (ctx.state === 'suspended') {
+        ctx.resume().then(() => playBeep()).catch(() => playBeep());
+      } else {
+        playBeep();
+      }
     } catch (e) {
       console.error("Failed to play notify sound:", e);
     }
