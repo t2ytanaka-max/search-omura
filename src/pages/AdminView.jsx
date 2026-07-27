@@ -3,7 +3,7 @@ import { Users, Send, LayoutDashboard, MessageSquare, RefreshCw, Radio, LogOut, 
 import OfflineMap from '../components/OfflineMap';
 import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { sendOSNotification, requestNotificationPermission } from '../lib/notification';
+import { sendOSNotification, requestNotificationPermission, getNotificationPermission } from '../lib/notification';
 
 const STATUS_MAP = {
   'ST01': { text: '捜索中', color: 'text-white bg-blue-600 border border-blue-500' },
@@ -35,6 +35,7 @@ export default function AdminView({ onGoBack }) {
   const [mapCenterTarget, setMapCenterTarget] = useState(null); // 地図移動ターゲット座標
   const [isLogsMinimized, setIsLogsMinimized] = useState(false); // 受信生ログ履歴の最小化状態
   const [reportMarkers, setReportMarkers] = useState([]); // 報告されたマーカー(要救助者発見、危険箇所など)
+  const [notifPermission, setNotifPermission] = useState(() => getNotificationPermission());
 
   const monitorStartTime = useRef(Date.now());
   const isLoadedRef = useRef(false);
@@ -430,6 +431,22 @@ export default function AdminView({ onGoBack }) {
       className="flex flex-col md:flex-row h-[100dvh] w-full bg-gray-950 text-white overflow-hidden relative"
     >
       
+      {/* スリープ・ロック時通知許可案内バナー (未許可時に常時表示) */}
+      {notifPermission !== 'granted' && (
+        <div className="w-full bg-yellow-500/20 border-b border-yellow-500/50 p-2 text-center text-xs font-black text-yellow-300 flex items-center justify-center gap-2 z-50 shrink-0">
+          <span>🔔 スリープ中・画面ロック中の通知音を有効にしますか？</span>
+          <button
+            type="button"
+            onClick={async () => {
+              const res = await requestNotificationPermission();
+              setNotifPermission(res);
+            }}
+            className="px-3 py-1 bg-yellow-400 text-black rounded-lg font-black hover:bg-yellow-300 active:scale-95 transition-all shadow cursor-pointer text-xs shrink-0"
+          >
+            通知を許可する
+          </button>
+        </div>
+      )}
       
       {/* モバイル用タブヘッダー (PCでは非表示) */}
       <div className="md:hidden flex items-center bg-gray-900 border-b border-gray-800 z-30 px-2 w-full">

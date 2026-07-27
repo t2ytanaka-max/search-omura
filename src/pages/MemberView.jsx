@@ -525,7 +525,7 @@ export default function MemberView({ onGoBack }) {
         </div>
 
         {/* スリープ通知許可を促すバナー (通知未許可の場合のみ表示) */}
-        {notifPermission !== 'granted' && notifPermission !== 'unsupported' && (
+        {notifPermission !== 'granted' && (
           <div className="mt-2.5 bg-yellow-950/40 border border-yellow-700/50 p-2.5 rounded-xl flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="text-base animate-bounce">🔔</span>
