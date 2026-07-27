@@ -38,6 +38,21 @@ export default function AdminView({ onGoBack }) {
   const monitorStartTime = useRef(Date.now());
   const isLoadedRef = useRef(false);
 
+  const pendingMessageAlertRef = useRef(null);
+
+  // 本部画面がスリープ復帰時（画面点灯時）に未確認現場報告があれば即座にチャイム音＋ポップアップ表示
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && pendingMessageAlertRef.current) {
+        playAlertSound();
+        setActiveMessageAlert(pendingMessageAlertRef.current);
+        pendingMessageAlertRef.current = null;
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   // 音声自動再生の制限解除 (ユーザーの最初のアクション時)
   const unlockAudio = () => {
     if (window.sharedAudioCtx) return;
@@ -179,9 +194,7 @@ export default function AdminView({ onGoBack }) {
                 const lngNum = parseFloat(parts[4]);
                 const message = parts[6] || '';
                 
-                // 全ての報告(ST01~ST06)および伝達テキストについて、本部画面にポップアップ表示＆チャイム音通知
-                playAlertSound();
-                setActiveMessageAlert({
+                const alertPayload = {
                   id: change.doc.id,
                   userId: uId,
                   userName: uName,
@@ -191,7 +204,14 @@ export default function AdminView({ onGoBack }) {
                   lat: latNum,
                   lng: lngNum,
                   timestamp: ts || Date.now()
-                });
+                };
+
+                // 全ての報告(ST01~ST06)および伝達テキストについて、本部画面にポップアップ表示＆チャイム音通知
+                playAlertSound();
+                setActiveMessageAlert(alertPayload);
+                if (document.visibilityState !== 'visible') {
+                  pendingMessageAlertRef.current = alertPayload;
+                }
                 triggerVibration();
               }
             }

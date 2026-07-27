@@ -167,6 +167,20 @@ export default function MemberView({ onGoBack }) {
     return new TextEncoder().encode(str).length;
   };
 
+  const pendingInstructionRef = useRef(null);
+
+  // 画面スリープ復帰時（ユーザーが画面を点灯させた瞬間）に、スリープ中に届いていた未確認指示を爆音警報再生！
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && pendingInstructionRef.current) {
+        setActiveAlert(pendingInstructionRef.current);
+        pendingInstructionRef.current = null;
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   // 1. 同期・キュー監視カスタムフック
   const {
     isOnline,
@@ -180,8 +194,12 @@ export default function MemberView({ onGoBack }) {
     // 新着指示があった時のコールバック (画面内モーダル ＋ スリープ中OS通知の両方を同時トリガー)
     if (newInstructionMsg) {
       setActiveAlert(newInstructionMsg);
-      // スマホがスリープ/画面オフ中であっても画面ロック上に通知バナー＋音バイブでお知らせ
+      if (document.visibilityState !== 'visible') {
+        pendingInstructionRef.current = newInstructionMsg;
+      }
+      // スマホがスリープ/画面オフ中であっても画面ロック上に通知バナー＋強力振動でお知らせ
       sendOSNotification("🚨 本部からの緊急指示", newInstructionMsg.text, {
+        vibrate: [1500, 200, 1500, 200, 1500, 200, 3000],
         data: { id: newInstructionMsg.id }
       });
     }
