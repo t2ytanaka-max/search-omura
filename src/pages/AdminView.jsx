@@ -431,20 +431,26 @@ export default function AdminView({ onGoBack }) {
       className="flex flex-col md:flex-row h-[100dvh] w-full bg-gray-950 text-white overflow-hidden relative"
     >
       
-      {/* スリープ・ロック時通知許可案内バナー (未許可時に常時表示) */}
+      {/* スリープ・ロック時通知許可案内バナー */}
       {notifPermission !== 'granted' && (
         <div className="w-full bg-yellow-500/20 border-b border-yellow-500/50 p-2 text-center text-xs font-black text-yellow-300 flex items-center justify-center gap-2 z-50 shrink-0">
-          <span>🔔 スリープ中・画面ロック中の通知音を有効にしますか？</span>
-          <button
-            type="button"
-            onClick={async () => {
-              const res = await requestNotificationPermission();
-              setNotifPermission(res);
-            }}
-            className="px-3 py-1 bg-yellow-400 text-black rounded-lg font-black hover:bg-yellow-300 active:scale-95 transition-all shadow cursor-pointer text-xs shrink-0"
-          >
-            通知を許可する
-          </button>
+          {notifPermission === 'unsupported' ? (
+            <span>ℹ️ お使いのiPhone(iOS15以前)はiOS仕様によりスリープWeb通知非対応ですが、画面表示中の地図・全報告・着信音機能は100%ご利用いただけます。</span>
+          ) : (
+            <>
+              <span>🔔 スリープ中・画面ロック中の通知音を有効にしますか？</span>
+              <button
+                type="button"
+                onClick={async () => {
+                  const res = await requestNotificationPermission();
+                  setNotifPermission(res);
+                }}
+                className="px-3 py-1 bg-yellow-400 text-black rounded-lg font-black hover:bg-yellow-300 active:scale-95 transition-all shadow cursor-pointer text-xs shrink-0"
+              >
+                通知を許可する
+              </button>
+            </>
+          )}
         </div>
       )}
       
