@@ -3,6 +3,7 @@ import { Users, Send, LayoutDashboard, MessageSquare, RefreshCw, Radio, LogOut, 
 import OfflineMap from '../components/OfflineMap';
 import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { sendOSNotification, requestNotificationPermission } from '../lib/notification';
 
 const STATUS_MAP = {
   'ST01': { text: '捜索中', color: 'text-white bg-blue-600 border border-blue-500' },
@@ -39,6 +40,10 @@ export default function AdminView({ onGoBack }) {
   const isLoadedRef = useRef(false);
 
   const pendingMessageAlertRef = useRef(null);
+
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
 
   // 本部画面がスリープ復帰時（画面点灯時）に未確認現場報告があれば即座にチャイム音＋ポップアップ表示
   useEffect(() => {
@@ -206,7 +211,12 @@ export default function AdminView({ onGoBack }) {
                   timestamp: ts || Date.now()
                 };
 
-                // 全ての報告(ST01~ST06)および伝達テキストについて、本部画面にポップアップ表示＆チャイム音通知
+                // 全ての報告(ST01~ST06)および伝達テキストについて、OS標準通知音＋ポップアップを表示
+                sendOSNotification(
+                  `🚨 現場報告: ${uName} (${STATUS_NAME_MAP[stCode] || '活動報告'})`,
+                  message ? `「${message}」` : `${uName}様より【${STATUS_NAME_MAP[stCode] || '報告'}】が届きました。`,
+                  { data: { id: change.doc.id } }
+                );
                 playAlertSound();
                 setActiveMessageAlert(alertPayload);
                 if (document.visibilityState !== 'visible') {
