@@ -173,7 +173,10 @@ export default function AdminView({ onGoBack }) {
                   timestamp: ts || Date.now()
                 };
 
-                // 全ての報告(ST01~ST06)および伝達テキストについて、OS標準通知音＋ポップアップを表示
+                // 1. iPhone/Androidの画面表示中の通知無音化制限を突破するため画面内効果音を再生
+                playNotificationSound();
+
+                // 2. スリープ中・背景用のOS標準通知バナー＋通知音
                 sendOSNotification(
                   `🚨 現場報告: ${uName} (${STATUS_NAME_MAP[stCode] || '活動報告'})`,
                   message ? `「${message}」` : `${uName}様より【${STATUS_NAME_MAP[stCode] || '報告'}】が届きました。`,
