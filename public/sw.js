@@ -95,10 +95,12 @@ self.addEventListener('push', (event) => {
     body: data.body || '本部からの指示が届いています。',
     icon: '/icon.png',
     badge: '/icon.png',
-    vibrate: [1000, 500, 1000, 500, 1000],
-    tag: 'instruction-alert',
+    vibrate: [1000, 300, 1000, 300, 1000, 300, 1000],
+    tag: 'push-alert-' + Date.now(),
     renotify: true,
     requireInteraction: true, // 画面点灯＆ユーザー操作まで固定表示
+    silent: false,
+    timestamp: Date.now(),
     data: data
   };
 
