@@ -49,7 +49,6 @@ export default function AdminView({ onGoBack }) {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && pendingMessageAlertRef.current) {
-        playAlertSound();
         setActiveMessageAlert(pendingMessageAlertRef.current);
         pendingMessageAlertRef.current = null;
       }
@@ -123,43 +122,6 @@ export default function AdminView({ onGoBack }) {
     }
   };
 
-  // 本部用：現場伝達事項メッセージ着信音 (ピンポンパンポン4和音チャイム)
-  const playAlertSound = () => {
-    try {
-      let ctx = window.sharedAudioCtx;
-      if (!ctx) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        ctx = new AudioContext();
-        window.sharedAudioCtx = ctx;
-      }
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
-      
-      const now = ctx.currentTime;
-      const notes = [
-        { freq: 523.25, time: 0.0,  duration: 0.3 }, // ド (C5)
-        { freq: 659.25, time: 0.35, duration: 0.3 }, // ミ (E5)
-        { freq: 783.99, time: 0.7,  duration: 0.3 }, // ソ (G5)
-        { freq: 1046.50, time: 1.05, duration: 0.5 } // 高いド (C6)
-      ];
-
-      notes.forEach(({ freq, time, duration }) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, now + time);
-        gain.gain.setValueAtTime(0.5, now + time);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + time + duration);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now + time);
-        osc.stop(now + time + duration);
-      });
-    } catch (e) {
-      console.error("Failed to play alert sound:", e);
-    }
-  };
 
   // 新着報告時のスマホバイブレーション
   const triggerVibration = () => {
@@ -217,7 +179,6 @@ export default function AdminView({ onGoBack }) {
                   message ? `「${message}」` : `${uName}様より【${STATUS_NAME_MAP[stCode] || '報告'}】が届きました。`,
                   { data: { id: change.doc.id } }
                 );
-                playAlertSound();
                 setActiveMessageAlert(alertPayload);
                 if (document.visibilityState !== 'visible') {
                   pendingMessageAlertRef.current = alertPayload;
